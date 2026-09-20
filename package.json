@@ -1,0 +1,15 @@
+{
+  "name": "guildcopilot-forever",
+  "version": "0.1.0-beta.1",
+  "private": true,
+  "description": "Standalone Guild Copilot for WoW Forever Beta",
+  "scripts": {
+    "test": "node tools/test.mjs",
+    "test:lua": "node tools/run-lua-tests.mjs",
+    "package": "node tools/package.mjs"
+  },
+  "devDependencies": {
+    "fengari": "0.1.5",
+    "jszip": "3.10.1"
+  }
+}

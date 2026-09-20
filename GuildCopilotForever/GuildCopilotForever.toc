@@ -1,0 +1,27 @@
+## Interface: 16001
+## Title: Guild Copilot Forever
+## Notes: Gildenassistent für Rekrutierung, Roster, Berufe und Raidauswertung in WoW Forever Beta.
+## Author: Guild Copilot Team
+## Version: 0.1.0-beta.1
+## SavedVariables: GuildCopilotForeverDB
+## IconTexture: Interface\AddOns\GuildCopilotForever\Media\GuildCopilotForeverLogo
+
+Client.lua
+Constants.lua
+ClientData.lua
+Locales.lua
+Core.lua
+Database.lua
+Profile.lua
+Roster.lua
+Inventory.lua
+Workshop.lua
+RaidMonitor.lua
+GearAudit.lua
+Sync.lua
+Orders.lua
+Recruitment.lua
+Chat.lua
+RaidSearch.lua
+Onboarding.lua
+UI.lua
