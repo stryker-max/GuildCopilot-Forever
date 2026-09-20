@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Guild Copilot Forever
-## Notes: Gildenassistent für Rekrutierung, Roster, Berufe und Raidauswertung in WoW Forever Beta.
+## Notes: Gildenassistent für Rekrutierung, Roster, Berufe und Gruppensuche in WoW Forever Beta.
 ## Author: Guild Copilot Team
 ## Version: 0.1.0-beta.1
 ## SavedVariables: GuildCopilotForeverDB

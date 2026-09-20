@@ -22,6 +22,8 @@ local MAX_LOG_ENTRIES = 12
 -- UI limits; transport checks the encoded size separately (% expands to %25).
 local MAX_NOTE_BYTES = 48
 local MAX_NAME_BYTES = 30
+-- Character identities include the realm; recipe labels keep their own limit.
+local MAX_PLAYER_NAME_BYTES = 96
 local MIN_ANSWER_INTERVAL = 30
 -- Ein gerichteter Auftrag ("Wunsch-Hersteller") ist so lange reserviert,
 -- danach offen fuer alle. Die Frist wird nie gesendet - jeder Client rechnet
@@ -505,7 +507,7 @@ end
 local function AppendLog(order, at, by, event, note)
     order.log = order.log or {}
     at = tonumber(at) or GC.Util.Now()
-    by = Sanitized(by, MAX_NAME_BYTES)
+    by = Sanitized(by, MAX_PLAYER_NAME_BYTES)
     note = Sanitized(note, MAX_NOTE_BYTES)
     for _, entry in ipairs(order.log) do
         if entry.at == at and entry.event == event
@@ -626,8 +628,8 @@ local function Transition(self, order, event, actor, at, extra, remote)
         order.status = "ACCEPTED"
         order.acceptedByTag = Sanitized(extra.accountTag, 12)
         order.acceptedAt = at
-        order.crafter = Sanitized(crafter, MAX_NAME_BYTES)
-        order.acceptedVia = Sanitized(actor, MAX_NAME_BYTES)
+        order.crafter = Sanitized(crafter, MAX_PLAYER_NAME_BYTES)
+        order.acceptedVia = Sanitized(actor, MAX_PLAYER_NAME_BYTES)
     elseif event == "MAT" then
         if status ~= "ACCEPTED" then
             return false, "Materialien lassen sich nur nach der Annahme melden."
@@ -1057,7 +1059,7 @@ function GC.Orders:Create(recipeKey, options)
         reimbursedAt = 0,
         reimbursedPaid = 0,
         craftedCount = 0,
-        preferredCrafter = Sanitized(preferred, 20),
+        preferredCrafter = Sanitized(preferred, MAX_PLAYER_NAME_BYTES),
         log = {},
     }
     AppendLog(order, now, ownName, "CRT",
@@ -1280,7 +1282,7 @@ function GC.Orders:ReceiveCore(fields, sender)
         recipeKey = GC.Util.Trim(fields[5]),
         recipeName = Sanitized(fields[6], MAX_NAME_BYTES),
         quantity = math.max(1, math.min(99, math.floor(tonumber(fields[7]) or 1))),
-        createdBy = Sanitized(createdBy, MAX_NAME_BYTES),
+        createdBy = Sanitized(createdBy, MAX_PLAYER_NAME_BYTES),
         createdByTag = Sanitized(fields[9], 12),
         createdAt = createdAt,
         changedAt = createdAt,
@@ -1297,7 +1299,7 @@ function GC.Orders:ReceiveCore(fields, sender)
         reimbursedAt = 0,
         reimbursedPaid = 0,
         craftedCount = 0,
-        preferredCrafter = Sanitized(fields[16], 20),
+        preferredCrafter = Sanitized(fields[16], MAX_PLAYER_NAME_BYTES),
         log = {},
     }
     AppendLog(store[orderID], createdAt, createdBy, "CRT", store[orderID].note)
@@ -1343,13 +1345,13 @@ function GC.Orders:ReceiveState(fields, sender)
             and status == "ACCEPTED" and order.status == "ACCEPTED"
             and incomingTag ~= "" and incomingTag ~= order.acceptedByTag
             and SameCharacter(fields[11], sender)
-            and self:IsKnownCrafter(Sanitized(fields[10], MAX_NAME_BYTES), order.recipeKey)
+            and self:IsKnownCrafter(Sanitized(fields[10], MAX_PLAYER_NAME_BYTES), order.recipeKey)
             and IncomingAcceptWins(order, fields[9], incomingTag) then
             local lostOwn = order.acceptedByTag == GC.DB:GetAccountTag()
             order.acceptedByTag = incomingTag
             order.acceptedAt = tonumber(fields[9]) or 0
-            order.crafter = Sanitized(fields[10], MAX_NAME_BYTES)
-            order.acceptedVia = Sanitized(fields[11], MAX_NAME_BYTES)
+            order.crafter = Sanitized(fields[10], MAX_PLAYER_NAME_BYTES)
+            order.acceptedVia = Sanitized(fields[11], MAX_PLAYER_NAME_BYTES)
             if logEvent ~= "" then
                 AppendLog(order, logAt, logBy, logEvent, logNote)
             end
@@ -1366,7 +1368,7 @@ function GC.Orders:ReceiveState(fields, sender)
 
     -- Berechtigung: Wer meldet diesen Schritt?
     if logEvent == "ACC" then
-        local crafter = Sanitized(fields[10], MAX_NAME_BYTES)
+        local crafter = Sanitized(fields[10], MAX_PLAYER_NAME_BYTES)
         if not SameCharacter(fields[11], sender)
             or not self:IsKnownCrafter(crafter, order.recipeKey)
             or self:IsReservedForOther(order, crafter, tonumber(fields[9])) then
@@ -1400,8 +1402,8 @@ function GC.Orders:ReceiveState(fields, sender)
     order.changedAt = tonumber(fields[7]) or GC.Util.Now()
     order.acceptedByTag = incomingTag
     order.acceptedAt = tonumber(fields[9]) or 0
-    order.crafter = Sanitized(fields[10], MAX_NAME_BYTES)
-    order.acceptedVia = Sanitized(fields[11], MAX_NAME_BYTES)
+    order.crafter = Sanitized(fields[10], MAX_PLAYER_NAME_BYTES)
+    order.acceptedVia = Sanitized(fields[11], MAX_PLAYER_NAME_BYTES)
     order.actualCost = math.max(0, math.floor(tonumber(fields[12]) or 0))
     order.reimbursedAt = tonumber(fields[13]) or 0
     order.reimbursedPaid = math.max(0, math.floor(tonumber(fields[18]) or 0))

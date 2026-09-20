@@ -8,7 +8,7 @@ Die Projekte sind vollständig getrennt. Änderungen und Pakete in diesem Reposi
 
 `Client.lua` kapselt die API-Unterschiede, ohne globale Blizzard-Funktionen zu überschreiben. `C_SkillInfo.GetSkillLineInfo` und `C_Spell.GetSpellInfo` liefern Strukturen, die explizit in die erwarteten Rückgabewerte übersetzt werden. Die Rezeptdaten stammen aus `C_TradeSkillUI`; Listen- und Datenquellenereignisse lösen erneute Scans aus. Talentpunkte stammen aus dem dokumentierten siebten Rückgabewert von `C_SpecializationInfo.GetSpecializationInfo`.
 
-Die Datenspeicherung verwendet ausschließlich `GuildCopilotForeverDB`, der Datenaustausch `GCPForever`. Namensschlüssel erhalten in Forever ihren Realmanteil. Die öffentliche Alt-Kampflog-API wird nicht durch interne oder geschützte APIs ersetzt. Ausrüstung kann weiterhin erfasst werden, aber TBC-BiS-Wissen und Pflichtverzauberungsslots werden nicht auf neue Spielregeln übertragen. Eine passende Forever-Regelbasis muss später anhand bestätigter Spieldaten ergänzt werden.
+Die Datenspeicherung verwendet ausschließlich `GuildCopilotForeverDB`, der Datenaustausch `GCPForever`. Namensschlüssel erhalten in Forever ihren Realmanteil. Aufträge verwenden für Spieleridentitäten eine eigene Längengrenze; Reservierungen sowie fragmentierte Kern- und Zustandspakete werden mit langen Realmnamen getestet. Die öffentliche Alt-Kampflog-API wird nicht durch interne oder geschützte APIs ersetzt. Ausrüstung kann weiterhin erfasst werden, aber TBC-BiS-Wissen und Pflichtverzauberungsslots werden nicht auf neue Spielregeln übertragen. Eine passende Forever-Regelbasis muss später anhand bestätigter Spieldaten ergänzt werden.
 
 ## Nächste Abnahme
 

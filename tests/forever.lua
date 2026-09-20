@@ -141,6 +141,39 @@ for _ in pairs(profession.recipes) do count = count + 1 end
 check(count == 1, "Unlearned recipe stored")
 local orderOK, orderMessage = addon.Orders:Create("I2996", { quantity = 2, materialModel = "A" })
 check(orderOK, "Crafting order failed: " .. tostring(orderMessage))
+-- Long realm-qualified identities must survive reservation and packet round trips.
+do
+    local owner = "Requester-VeryLongForeverRealmName"
+    local crafter = "Artisan-AnotherLongForeverRealmName"
+    local originalCatalog = addon.Workshop.GetCatalogEntry
+    addon.Workshop.GetCatalogEntry = function()
+        return { name = "Bolt of Linen Cloth", crafters = { crafter } }
+    end
+    check(addon.Orders:Create("I2996", { preferredCrafter = crafter }), "Long-name reservation rejected")
+    addon.Workshop.GetCatalogEntry = originalCatalog
+    local reserved
+    for _, order in pairs(addon.Orders:GetStore()) do
+        if order.preferredCrafter ~= "" then reserved = order end
+    end
+    check(reserved and reserved.preferredCrafter == crafter, "Reserved crafter name truncated locally")
+    local packet = {
+        id = "long-realm-order", recipeKey = "I2996", recipeName = "Bolt of Linen Cloth",
+        createdBy = owner, createdByTag = "longtag", createdAt = addon.Util.Now(),
+        preferredCrafter = crafter, crafter = crafter, acceptedVia = crafter,
+        rev = 1, status = "ACCEPTED", acceptedByTag = "crafttag", acceptedAt = addon.Util.Now(),
+    }
+    for _, message in ipairs(addon.Orders:BuildTransportMessages(addon.Orders:BuildCoreMessage(packet))) do
+        addon.Orders:OnMessage(message, owner, "GUILD")
+    end
+    local received = addon.Orders:GetOrder(packet.id)
+    check(received and received.createdBy == owner, "Order creator realm truncated on receipt")
+    check(received.preferredCrafter == crafter, "Reserved crafter realm truncated on receipt")
+    for _, message in ipairs(addon.Orders:BuildTransportMessages(addon.Orders:BuildStateMessage(packet))) do
+        addon.Orders:OnMessage(message, crafter, "GUILD")
+    end
+    check(received.crafter == crafter and received.acceptedVia == crafter, "Accepted crafter realm truncated")
+    check(received.log[1].by == owner, "Order history discarded creator realm")
+end
 addon.Workshop:CraftOpenRecipe("I2996", 2)
 check(crafted and crafted[1] == 2963 and crafted[2] == 2, "Modern crafting not used")
 addon.Inventory:ScanBags()
