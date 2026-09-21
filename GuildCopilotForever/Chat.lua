@@ -27,6 +27,19 @@ function GC.Chat:IsSessionActive()
     return true
 end
 
+function GC.Chat:GetCaptureStatus()
+    local settings = GC.DB:GetSettings()
+    local whisper = #self:GetRecruitmentWords("whisperTriggers") > 0
+    local channel = settings.watchRecruitmentTriggers and (#self:GetRecruitmentWords("chatTriggers") > 0
+        or settings.smartRecruitmentDetection)
+    if not whisper and not channel then
+        return "Keine Erkennungswörter aktiv: Neue Bewerber werden nicht aufgenommen. Suchwörter in den Einstellungen eintragen; bestehende Unterhaltungen bleiben aktiv."
+    end
+    local state = whisper and (settings.captureOnlyDuringSearch and not self:IsSessionActive()
+        and "Neue Whisper: erst nach Werbung; " or "Neue Whisper: Erkennung aktiv; ") or "Neue Whisper: keine Suchwörter; "
+    return state .. (channel and "öffentliche Suche aktiv." or "öffentliche Suche aus.")
+end
+
 -- Der Ton fuer die eigene Profilbestaetigung. Er ist bewusst vom Bewerberton
 -- getrennt: Der eine meldet einen fremden Interessenten, der andere bestaetigt
 -- die eigene Eingabe.
@@ -523,14 +536,22 @@ function GC.Chat:GetRemainingCooldown(kind)
 end
 
 function GC.Chat:SendChat(text, chatType, language, channelID, target)
-    if C_ChatInfo and C_ChatInfo.SendChatMessage then
-        C_ChatInfo.SendChatMessage(text, chatType, language, channelID or target)
-        return true
-    elseif SendChatMessage then
-        SendChatMessage(text, chatType, language, channelID or target)
-        return true
+    if GC.Client.HasSecretArguments(text, chatType, language, channelID, target) then
+        return false, "Diese Nachricht ist derzeit nicht lesbar."
     end
-    return false
+    if C_ChatInfo and type(C_ChatInfo.InChatMessagingLockdown) == "function" then
+        local ok, restricted = pcall(C_ChatInfo.InChatMessagingLockdown)
+        if not ok or GC.Client.IsSecret(restricted) or restricted then
+            return false, "Chatsperre aktiv. Bitte später erneut versuchen."
+        end
+    end
+    local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
+    if type(send) ~= "function" then return false, "Chatversand ist nicht verfügbar." end
+    local ok, result = pcall(send, text, chatType, language, channelID or target)
+    if not ok or GC.Client.IsSecret(result) or result == false then
+        return false, "Versand abgewiesen. Dein Entwurf bleibt erhalten."
+    end
+    return true
 end
 
 function GC.Chat:StartSearch(text)
@@ -791,7 +812,7 @@ function GC.Chat:ResolveLeadClass(lead)
         return lead.classFile
     end
     local ok, _, classFile = pcall(GetPlayerInfoByGUID, lead.guid)
-    if ok and classFile and GC.Classes[classFile] then
+    if ok and not GC.Client.IsSecret(classFile) and classFile and GC.Classes[classFile] then
         lead.classFile = classFile
         lead.classSource = "GUID"
         return classFile
@@ -823,6 +844,10 @@ function GC.Chat:RefreshLeadDetails(lead)
 end
 
 function GC.Chat:CaptureLead(message, sender, guid, source)
+    if GC.Client.HasSecretArguments(message, sender) then return end
+    if GC.Client.IsSecret(guid) then guid = nil end
+    if GC.Client.IsSecret(source) then source = nil end
+    if type(message) ~= "string" or GC.Util.Trim(message) == "" then return end
     local settings = GC.DB:GetSettings()
     if GC.Util.Trim(sender) == ""
         or GC.Util.NormalizeName(sender) == GC.Util.NormalizeName(GC:GetPlayerFullName()) then
@@ -923,15 +948,19 @@ function GC.Chat:CaptureLead(message, sender, guid, source)
         self.heardSenders[normalizedSender] = true
         self:PlaySuccessSound()
     end
-    -- Ersterfassung und geaenderte Charakterdaten teilen. Wiederholungen ohne
-    -- neue Klasse/Stufe brauchen weiterhin kein weiteres Paket.
-    if #lead.messages == 1 or lead.classFile ~= previousClass or lead.level ~= previousLevel then
-        self:SendLead(lead)
+    -- Ersterfassung und geaenderte Charakterdaten sofort teilen, die letzte
+    -- Aktivitaet hoechstens einmal pro Minute. Private Folgetexte bleiben lokal.
+    if #lead.messages == 1 or lead.classFile ~= previousClass or lead.level ~= previousLevel
+        or GC.Util.Now() - (tonumber(lead.lastInboxSyncAt) or 0) >= 60 then
+        if self:SendLead(lead) then lead.lastInboxSyncAt = GC.Util.Now() end
     end
+    GC.DB:Prune()
     GC:FireCallback("INBOX_UPDATED", lead)
 end
 
 function GC.Chat:CaptureWhisper(message, sender, guid)
+    if GC.Client.HasSecretArguments(message, sender) then return end
+    if GC.Client.IsSecret(guid) then guid = nil end
     -- Werkstatt-Befehle zuerst: "!rezept <suche>" beantwortet der Katalog
     -- (sofern eingeschaltet). Ein behandelter Befehl gehoert nie ins
     -- Bewerber-Postfach - sonst laege jeder Rezeptfrager als Interessent da.
@@ -939,25 +968,23 @@ function GC.Chat:CaptureWhisper(message, sender, guid)
         and GC.Workshop:AnswerRecipeWhisper(message, sender) then
         return
     end
-    -- Laeuft eine Raidsuche, gehoeren Antworten darauf in deren Zulauf, nicht
-    -- ins Bewerber-Postfach. Die Weiche fragt die Raidsuche, weil nur sie die
-    -- Regeln kennt (Gildenmitglieder immer, Externe ohne Bewerber-Trigger);
-    -- ohne laufende Suche aendert sich am bisherigen Verhalten nichts.
-    if GC.RaidSearch and GC.RaidSearch:ShouldCaptureWhisper(message, sender) then
-        GC.RaidSearch:CaptureResponse(message, sender, guid)
-        return
-    end
-    local settings = GC.DB:GetSettings()
-    if settings.captureOnlyDuringSearch and not self:IsSessionActive() then
-        return
-    end
     local knownLead = false
     for _, lead in ipairs(GC.DB:GetGuild().inbox) do
-        if SameLead(lead.name, lead.guid, sender, guid) then
+        if type(lead) == "table" and SameLead(lead.name, lead.guid, sender, guid) then
             knownLead = true
             break
         end
     end
+    -- Laeuft eine Raidsuche, gehoeren Antworten darauf in deren Zulauf, nicht
+    -- ins Bewerber-Postfach. Die Weiche fragt die Raidsuche, weil nur sie die
+    -- Regeln kennt (Gildenmitglieder immer, Externe ohne Bewerber-Trigger);
+    -- ohne laufende Suche aendert sich am bisherigen Verhalten nichts.
+    if not knownLead and GC.RaidSearch and GC.RaidSearch:ShouldCaptureWhisper(message, sender) then
+        GC.RaidSearch:CaptureResponse(message, sender, guid)
+        return
+    end
+    local settings = GC.DB:GetSettings()
+    if not knownLead and settings.captureOnlyDuringSearch and not self:IsSessionActive() then return end
     local normalizedMessage = tostring(message or ""):lower()
     -- Ausschluss schlaegt Trigger. Er verhindert aber nur, dass ein Wort
     -- jemanden neu ins Postfach holt: Wer schon drinsteht, dessen Unterhaltung
@@ -1086,6 +1113,7 @@ local function EncodeLinkPath(value)
 end
 
 function GC.Chat:BuildLeadProfileLinks(playerName)
+    if GC.Client.isForever then return { armory = "", logs = "" } end
     local characterName = GC.Util.PlayerShortName(GC.Util.Trim(playerName))
     if characterName == "" then
         return { armory = "", logs = "" }
@@ -1125,11 +1153,13 @@ function GC.Chat:BuildLeadProfileLinks(playerName)
 end
 
 function GC.Chat:SendReply(playerName, text)
-    text = GC.Util.SafeChatText(text)
+    if GC.Client.HasSecretArguments(playerName, text) then return false, "Nachricht nicht lesbar." end
+    text = GC.Util.Trim(text)
     if GC.Util.Trim(playerName) == "" or text == "" then
-        return false
+        return false, "Bitte Interessent und Antwort auswählen."
     end
-    local sent = self:SendChat(text, "WHISPER", nil, nil, playerName)
+    if #text > GC.Constants.MAX_CHAT_BYTES then return false, "Die Antwort ist länger als 255 Bytes. Bitte kürzen." end
+    local sent, reason = self:SendChat(text, "WHISPER", nil, nil, playerName)
     if sent then
         for _, lead in ipairs(GC.DB:GetGuild().inbox) do
             if SameLead(lead.name, lead.guid, playerName) then
@@ -1140,18 +1170,15 @@ function GC.Chat:SendReply(playerName, text)
         end
         GC:FireCallback("INBOX_UPDATED")
     end
-    return sent
+    return sent, reason
 end
 
 function GC.Chat:Invite(playerName)
-    if C_GuildInfo and C_GuildInfo.Invite then
-        C_GuildInfo.Invite(playerName)
-        return true
-    elseif GuildInvite then
-        GuildInvite(playerName)
-        return true
-    end
-    return false
+    if GC.Client.IsSecret(playerName) or GC.Util.Trim(playerName) == "" then return false end
+    local invite = C_GuildInfo and C_GuildInfo.Invite or GuildInvite
+    if type(invite) ~= "function" then return false end
+    local ok, result = pcall(invite, playerName)
+    return ok and not GC.Client.IsSecret(result) and result ~= false
 end
 
 function GC.Chat:RemoveLead(index)
@@ -1277,7 +1304,13 @@ end
 
 local function ParseInboxRecord(payload)
     local fields = GC.Util.SplitFields(payload)
-    if GC.Util.Trim(fields[1]) == "" then
+    local first, last, details = tonumber(fields[4]) or 0, tonumber(fields[5]) or 0, tonumber(fields[9]) or 0
+    local maximumTime = GC.Util.Now() + 24 * 60 * 60
+    if GC.Util.Trim(fields[1]) == "" or #fields[1] > GC.Constants.MAX_PLAYER_NAME_BYTES
+        or #(fields[2] or "") > 80 or #(fields[6] or "") > 100 or #(fields[7] or "") > 1024
+        or first ~= first or last ~= last or details ~= details
+        or first < 0 or last < 0 or details < 0
+        or first > maximumTime or last > maximumTime or details > maximumTime then
         return nil
     end
     return {
@@ -1309,6 +1342,7 @@ function GC.Chat:BuildInboxMessages(lead)
     end
 
     local chunks = GC.Util.ChunkEscapedPayload(payload, limit)
+    if #chunks > 8 then return {} end
     local messages = {}
     for index, chunk in ipairs(chunks) do
         messages[#messages + 1] = table.concat({
@@ -1327,10 +1361,11 @@ function GC.Chat:SendLead(lead, distribution, target)
     if #messages == 0 then
         return false
     end
+    local queued = true
     for _, message in ipairs(messages) do
-        GC.Sync:SendBulk(message, distribution or "GUILD", target)
+        queued = GC.Sync:SendBulk(message, distribution or "GUILD", target) and queued
     end
-    return true
+    return queued
 end
 
 -- Der ganze Bestand. Geht als Antwort auf eine Anfrage gezielt per Fluestern
@@ -1467,6 +1502,9 @@ function GC.Chat:MergeRemoteLead(record)
 end
 
 function GC.Chat:ReceiveSync(message, sender, distribution)
+    if GC.Client.HasSecretArguments(message, sender, distribution) then return end
+    if distribution ~= "GUILD" and distribution ~= "WHISPER" then return end
+    if distribution == "WHISPER" and not GC.Roster:IsGuildMember(sender) then return end
     local fields = GC.Util.SplitFields(message)
     if tonumber(fields[2]) ~= GC.Constants.SCHEMA_VERSION then
         return
@@ -1512,7 +1550,7 @@ function GC.Chat:ReceiveSync(message, sender, distribution)
     end
 
     local token = fields[4]
-    if GC.Util.Trim(token) == "" then
+    if GC.Util.Trim(token) == "" or #token > 80 then
         return
     end
     local index = tonumber(fields[5]) or 0
@@ -1536,17 +1574,18 @@ chatEvents:RegisterEvent("CHAT_MSG_WHISPER")
 chatEvents:RegisterEvent("CHAT_MSG_CHANNEL")
 chatEvents:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
 chatEvents:SetScript("OnEvent", function(_, event, ...)
-    if GC.Client.HasSecretArguments(...) then return end
     if event == "CHAT_MSG_WHISPER" then
         local message, sender, _, _, _, _, _, _, _, _, _, guid = ...
         GC.Chat:CaptureWhisper(message, sender, guid)
     elseif event == "CHAT_MSG_CHANNEL" then
         local message, sender, _, _, _, _, _, _, channelName, _, _, guid = ...
+        if GC.Client.HasSecretArguments(message, sender) then return end
         if GC.DB:GetSettings().watchRecruitmentTriggers and GC.Chat:IsRecruitmentSignal(message) then
             GC.Chat:CaptureLead(message, sender, guid, channelName or "CHANNEL")
         end
     elseif event == "CHAT_MSG_CHANNEL_NOTICE" then
         local noticeType, _, _, _, _, _, _, channelIndex, channelName = ...
+        if GC.Client.HasSecretArguments(noticeType, channelIndex, channelName) then return end
         local lfgChannelID = GC.Chat:FindChannel("LFG")
         if noticeType == "THROTTLED" and lfgChannelID then
             if tonumber(channelIndex) == tonumber(lfgChannelID)

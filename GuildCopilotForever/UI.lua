@@ -42,6 +42,7 @@ local SLASH_COMMANDS = {
     { command = "/gcp recruite", description = "blendet den Werbebalken ein oder aus" },
     { command = "/gcp debug", description = "misst die Laufzeit; ein zweiter Aufruf zeigt das Ergebnis" },
     { command = "/gcp help", description = "zeigt diese Liste im Chat" },
+    { command = "/gcp raidcheck", description = "erfasst außerhalb des Kampfes Gruppen-Buffs und eigene Verbrauchsvorräte" },
 }
 
 -- Masse der Seitenleiste. Sie muessen zur Fensterhoehe passen: kommt ein
@@ -8421,7 +8422,8 @@ end
 
 function GC.UI:BuildInboxPage()
     local page = self.pages.INBOX
-    CreatePageTitle(page, "Postfach", "Whispers und erkannte „Suche Gilde“-Nachrichten werden hier gesammelt.")
+    local _, captureHelp = CreatePageTitle(page, "Postfach", GC.Chat:GetCaptureStatus())
+    page.captureHelp = captureHelp
 
     local scroll = CreateModernScrollFrame(page)
     scroll:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -58)
@@ -8682,15 +8684,17 @@ function GC.UI:BuildInboxPage()
 
     page.replyButton = CreateButton(detailCard, "Antworten", 248, 38, function()
         local lead = SelectedLeadForAction()
-        if lead and GC.Chat:SendReply(lead.name, page.replyEdit:GetText()) then
+        local sent, reason
+        if lead then sent, reason = GC.Chat:SendReply(lead.name, page.replyEdit:GetText()) end
+        if sent then
             -- Verschickt ist verschickt: Der Entwurf hat seinen Zweck erfuellt
             -- und darf nicht beim naechsten Aufruf wieder dastehen.
             page.replyDrafts[GC.Util.NormalizeName(lead.name)] = nil
             page.replyEdit:SetText(GC.L(""))
-            page.replyResult:SetText("Antwort an " .. lead.name .. " gesendet.")
+            page.replyResult:SetText("Antwort an " .. lead.name .. " an den Client übergeben.")
             SetTextColor(page.replyResult, THEME.success)
         else
-            page.replyResult:SetText(GC.L("Bitte Interessent und Antwort auswählen."))
+            page.replyResult:SetText(reason or GC.L("Bitte Interessent und Antwort auswählen."))
             SetTextColor(page.replyResult, THEME.danger)
         end
         GC.UI:RefreshInbox()
@@ -9051,6 +9055,7 @@ function GC.UI:RefreshInbox()
     if not page then
         return
     end
+    if page.captureHelp then page.captureHelp:SetText(GC.Chat:GetCaptureStatus()) end
 
     local canEditTemplates = GC.Roster:CanEditGuildProfile()
     local templates = GC.DB:GetGuild().replyTemplates
@@ -9231,7 +9236,8 @@ function GC.UI:SetLeadProfileLinks(lead)
         end
     end
     if missing then
-        page.leadLinkNotice:SetText(GC.L("Ohne erkennbaren Realm des Interessenten lassen sich keine Profil-Links bilden."))
+        page.leadLinkNotice:SetText(GC.Client.isForever and "Für Forever sind noch keine verifizierten Profil-Linkziele eingerichtet."
+            or GC.L("Ohne erkennbaren Realm des Interessenten lassen sich keine Profil-Links bilden."))
     else
         page.leadLinkNotice:SetText(GC.L(""))
     end
@@ -9547,10 +9553,30 @@ end
 function GC.UI:BuildStatisticsPage()
     local page = self.pages.STATISTICS
     if not GC.Client.combatAnalysis then
-        CreatePageTitle(page, "Raidauswertung", GC.Client.combatAnalysisReason)
-        local info = CreateLabel(page, "Gildenverwaltung, Profile, Berufe, Aufträge und Gruppensuche stehen weiterhin zur Verfügung.",
-            { muted = true, width = 740, height = 80, vertical = "TOP" })
-        info:SetPoint("TOPLEFT", page, "TOPLEFT", 18, -100)
+        CreatePageTitle(page, "Raidvorbereitung",
+            "Buffs der erreichbaren Gruppe und eigene Vorräte vor dem Pull prüfen. Eine Momentaufnahme belegt keinen Verbrauch im Raid.")
+        page.preparationButton = CreateButton(page, "Vorbereitung erfassen", 220, 32, function()
+            local ok, message = GC.RaidPreparation:Capture()
+            page.preparationStatus:SetText(message)
+            SetTextColor(page.preparationStatus, ok and THEME.success or THEME.warning)
+            GC.UI:RefreshStatistics()
+        end)
+        page.preparationButton:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -78)
+        local gear = CreateButton(page, "Ausrüstung prüfen", 180, 32, function() GC.UI:ShowPage("GEAR") end)
+        gear:SetPoint("LEFT", page.preparationButton, "RIGHT", 12, 0)
+        page.preparationStatus = CreateLabel(page, "Nur öffentlich lesbare Daten; gesperrte oder entfernte Mitglieder bleiben unbekannt.",
+            { muted = true, width = 760, height = 44, vertical = "TOP" })
+        page.preparationStatus:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -122)
+        local scroll = CreateModernScrollFrame(page)
+        scroll:SetSize(776, 390)
+        scroll:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -174)
+        local content = CreateFrame("Frame", nil, scroll)
+        content:SetSize(744, 390)
+        scroll:SetScrollChild(content)
+        page.preparationContent = content
+        page.preparationText = CreateLabel(content, "", { width = 720, vertical = "TOP" })
+        page.preparationText:SetPoint("TOPLEFT", content, "TOPLEFT", 8, -8)
+        self:RefreshStatistics()
         return
     end
     CreatePageTitle(page, "Raidauswertung",
@@ -9898,7 +9924,15 @@ function GC.UI:BuildStatisticsPage()
 end
 
 function GC.UI:RefreshStatistics()
-    if not GC.Client.combatAnalysis then return end
+    if not GC.Client.combatAnalysis then
+        local page = self.pages.STATISTICS
+        if page and page.preparationText then
+            page.preparationText:SetText(GC.RaidPreparation:ReportText())
+            local height = math.max(390, (page.preparationText:GetStringHeight() or 390) + 24)
+            page.preparationContent:SetHeight(height)
+        end
+        return
+    end
     local page = self.pages.STATISTICS
     if not page then
         return
@@ -14254,6 +14288,14 @@ SLASH_GUILDCOPILOTFOREVER1 = "/gcp"
 SLASH_GUILDCOPILOTFOREVER2 = "/guildcopilot"
 SlashCmdList.GUILDCOPILOTFOREVER = function(input)
     local command = GC.Util.Trim(tostring(input or "")):lower()
+    if command == "raidcheck" then
+        local _, message = GC.RaidPreparation:Capture()
+        GC:Print(message)
+        GC.UI:CreateMainFrame()
+        GC.UI.frame:Show()
+        GC.UI:ShowPage("STATISTICS")
+        return
+    end
     if command == "client" then
         GC:Print(GC.Client.label .. " | " .. tostring(GC.Client.version) .. "." .. tostring(GC.Client.build)
             .. " | Interface " .. tostring(GC.Client.interface) .. " | Addon " .. GC.Constants.VERSION)

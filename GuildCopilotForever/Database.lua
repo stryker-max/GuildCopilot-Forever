@@ -497,6 +497,11 @@ function GC.DB:Prune()
             end
         end
     end
+    if #guildData.inbox > 100 and GC.Chat then
+        table.sort(guildData.inbox, function(a, b)
+            return GC.Chat:LeadLastActivity(a) > GC.Chat:LeadLastActivity(b)
+        end)
+    end
     while #guildData.inbox > 100 do
         table.remove(guildData.inbox)
     end

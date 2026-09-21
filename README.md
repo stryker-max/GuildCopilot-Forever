@@ -1,10 +1,10 @@
-# Guild Copilot 0.1.0-beta.3
+# Guild Copilot 0.1.0-beta.4
 
 Eigenständige Portierung von [Guild Copilot für TBC Anniversary](https://github.com/stryker-max/GuildCopilot) für **World of Warcraft: Forever Beta 1.60.1.69913**, Interface **16001**.
 
 ## Installation
 
-1. Das Paket `GuildCopilotForever-0.1.0-beta.3.zip` entpacken.
+1. Das Paket `GuildCopilotForever-0.1.0-beta.4.zip` entpacken.
 2. Den darin enthaltenen Ordner `GuildCopilotForever` nach `World of Warcraft/_classic_beta_/Interface/AddOns/` kopieren.
 3. Den WoW-Client vollständig neu starten, wenn das Addon neu hinzugefügt wurde. In der Addon-Liste **Guild Copilot** aktivieren.
 4. Im Spiel mit **`/gcp`** öffnen. **`/gcp client`** zeigt Client, Addon-Version, Datenbank und Sync-Kanal; **`/gcp ver`** zeigt die Versionen in der Gilde/Gruppe.
@@ -32,6 +32,7 @@ Keine automatische Übernahme von TBC-Daten. Die Forever-Fassung enthält weder 
 - Werkstatt mit bekannten Rezepten, Reagenzien, Beständen, Herstellern und Gildenaufträgen.
 - Frei konfigurierbare Gruppen-/Raidsuche, ohne unbestätigte TBC-Instanzvorgaben.
 - Ausrüstung erfassen und synchronisieren; gildenweit gepflegte Verzauberungsregeln.
+- Raidvorbereitung mit **`/gcp raidcheck`**: letzte Momentaufnahme der lesbaren Gruppen-Buffs und eigenen mitgeführten Verbrauchsgegenstände. [Bedienung und Grenzen](docs/RAID-VORBEREITUNG.md).
 - Vollständige zweiteilige Forever-Namen für Profile, Rechte, Hersteller und Aufträge; das Trennzeichen liefert der Client.
 - Talentgruppen und ausgegebene Punkte aus der Forever-Talentoberfläche, einschließlich niedriger Level und verfügbarer Inspect-Daten.
 
@@ -39,13 +40,15 @@ Forever verwendet regionale Charakternamen und Regelsets statt der bisherigen Re
 
 ## Bewusste Einschränkungen
 
-- **Keine Kampflog-Raidauswertung.** Die vom TBC-Addon verwendete öffentliche Schnittstelle ist im geprüften Forever-Build nicht verfügbar. Die betreffende Seite zeigt diesen Status statt unvollständiger Messwerte.
+- **Keine Verbrauchszähler aus dem Kampflog.** Die vom TBC-Addon verwendete öffentliche Schnittstelle ist im geprüften Forever-Build nicht verfügbar. Die Raidseite erfasst Vorbereitung; aktive Effekte oder Bestandsabnahmen beweisen keinen Verbrauch. Nicht lesbare Mitglieder gelten als unbekannt.
 - **Keine TBC-BiS- oder Pflichtverzauberungsbewertungen.** Ausrüstung wird erfasst; ein belastbarer Forever-Regelsatz liegt noch nicht vor. Unbewertete Verzauberungen gelten standardmäßig als unbekannt. Gilden können eigene Regeln für vorhandene Verzauberungen pflegen.
 - **Kein Warcraft-Logs-Import und keine TBC-Armory-Links.** Der bisherige Companion/Installer und dessen TBC-Datenmodell werden nicht mitgeliefert.
 - Berufs- und Gildenbankfunktionen hängen von den im jeweiligen Beta-Build freigeschalteten Spielsystemen ab. Es werden keine Blizzard-API-Beschränkungen umgangen.
 - SavedVariables werden regulär von WoW gespeichert. Ein im Beta-Client auftretender Speicher-/Wiederherstellungsfehler kann durch diese Portierung nicht behoben werden. Ein Wiederanmelden nach `/reload` und vollständigem Neustart gehört zur Abnahme.
 
 ## Validierung
+
+Im Bewerberpostfach zeigt die Kopfzeile, ob Erkennungswörter eingerichtet sind. Neue Interessenten werden gemäß diesen Einstellungen aufgenommen; bekannte Unterhaltungen bleiben auch nach Ende der Suche aktiv. Private Folgetexte bleiben lokal. Antworten über 255 Bytes oder vom Client abgewiesene Aufrufe behalten den Entwurf; „an den Client übergeben“ bestätigt keine Serverzustellung.
 
 Für vollständige Rezeptabgleiche müssen Sender und Empfänger **beta.2 oder neuer** verwenden. Große Rezepte werden vollständig über mehrere Nachrichten übertragen; beta.1 versteht dieses neue Format noch nicht.
 
@@ -67,4 +70,4 @@ Optional dieselben Lua-Tests unter echtem Lua 5.1:
 GCP_LUA51=lua5.1 npm run test:lua
 ```
 
-Ausgabe: `build/GuildCopilotForever-0.1.0-beta.3.zip` und `build/SHA256.json`. Lizenz: MIT, ursprüngliche Urheberschaft des Guild Copilot Teams bleibt erhalten.
+Ausgabe: `build/GuildCopilotForever-0.1.0-beta.4.zip` und `build/SHA256.json`. Lizenz: MIT, ursprüngliche Urheberschaft des Guild Copilot Teams bleibt erhalten.

@@ -1,5 +1,13 @@
 # Guild Copilot – Entwicklung
 
+## 0.1.0-beta.4: Postfach und Raidvorbereitung
+
+Das Postfach verarbeitet lesbare Whisper auch mit geschützten Begleitdaten und führt bekannte Unterhaltungen unabhängig vom Suchfenster fort. Antwortentwürfe, Paketgrenzen, Empfangsreihenfolge, Löschmarkierungen und aktive Bewerber bei voller Inbox sind abgesichert. Der Erkennungsstatus erklärt leere Suchwortlisten.
+
+Die Raidseite bietet eine gespeicherte Momentaufnahme über `/gcp raidcheck`: lesbare Gruppen-Buffs und eigene Verbrauchsvorräte vor dem Pull. Sie bewertet keine unbestätigten Forever-Pflichtbuffs und zählt keinen tatsächlichen Verbrauch. Für eine spätere Auswertung benutzter Verbrauchsmaterialien fehlen eine reale Forever-Logprobe und bestätigte Spell-/Item-Zuordnungen. Die öffentliche Schadensanzeige liefert hierfür keine Verbrauchsmetrik. [Quellen und Grenzen](docs/RAID-VORBEREITUNG.md).
+
+Noch im Spiel abzunehmen: Postfach zwischen zwei Gildenmitgliedern einschließlich Suchende, fehlgeschlagener Antwort und Neustart; Vorbereitungscheck mit erreichbaren, entfernten und offline Mitgliedern sowie tatsächlichen Forever-Verbrauchsgegenständen. Die Offline-Tests prüfen Verträge und Fehlerfälle, keine Serverzustellung.
+
 ## 0.1.0-beta.3: bestehenden Namen und Befehl beibehalten
 
 Der Produktname bleibt **Guild Copilot**, der Befehl **`/gcp`** mit Alias **`/guildcopilot`**. Das gilt auch für Titel, Einstellungen, Chat-Ausgaben, Einrichtungsassistent und Übersetzungen. Das vorhandene GitHub-Repository `stryker-max/GuildCopilot-Forever` enthält die Forever-Fassung; seine technische Trennung ist keine Produktumbenennung.

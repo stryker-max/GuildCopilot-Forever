@@ -361,4 +361,6 @@ check(addon.Roster:GetProfile("Same-RealmOne") ~= addon.Roster:GetProfile("Same-
 addon.Sync:OnMessage("GuildCopilot", wireProfile, "GUILD", "TBC-Realm")
 check(addon.Roster:GetProfile("TBC-Realm") == nil, "TBC packet accepted")
 for _, msg in ipairs(sentAddon) do check(msg[1] == "GCPForever", "Packet used TBC prefix") end
+assert(loadfile("tests/inbox.lua"))()(addon, check, Fire, secret)
+assert(loadfile("tests/raid-preparation.lua"))()(addon, check, secret)
 print("Forever: " .. checks .. " checks passed (API fixture 1.60.1.69913)")
