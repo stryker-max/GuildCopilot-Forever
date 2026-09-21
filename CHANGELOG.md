@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.1.0-beta.5 – 21.09.2026
+
+- Angehefteter Minimap-Button folgt dem Rand: Radius aus aktueller Breite/Höhe statt festem Wert 78; Größenänderungen werden sofort übernommen. Verschieben und Skalieren der Minimap nehmen den angehefteten Button mit.
+- Normales Ziehen heftet an und verschiebt entlang des Rings; **Umschalt + Ziehen** platziert frei. Große Mausabstände lösen den Button nicht mehr versehentlich ab. Gespeicherte freie Positionen, Winkel und Ausblenden bleiben erhalten. Hilfetexte angepasst.
+- Regressionstests für vergrößerte Minimap, Größenwechsel, unterschiedliche UI-/Minimap-Skalierung, freies Platzieren und erneutes Anheften.
+
 ## 0.1.0-beta.4 – 21.09.2026
 
 - ZIP-Paketbau stabilisiert: keine automatisch angelegten Ordner mit aktuellem Zeitstempel. Alle Archiveinträge werden auf feste Zeitstempel geprüft; zuvor konnte die Reproduzierbarkeitsprüfung abhängig vom Build-Zeitpunkt fehlschlagen.

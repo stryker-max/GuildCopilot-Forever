@@ -2,8 +2,9 @@
 
 Ziel: WoW Forever Beta 1.60.1.69913. Automatisierte Tests laufen außerhalb des Spiels und bestätigen keine Server- oder Mehrspielerfunktion.
 
-1. WoW nach der Erstinstallation vollständig neu starten. In der Addon-Liste steht **Guild Copilot 0.1.0-beta.4**.
+1. WoW nach der Erstinstallation vollständig neu starten. In der Addon-Liste steht **Guild Copilot 0.1.0-beta.5**.
 2. `/gcp client`: Interface 16001, Datenbank `GuildCopilotForeverDB`, Präfix `GCPForever`. `/gcp` öffnet das Hauptfenster; alle Seiten durchsehen.
+   Minimap-Button am Rand prüfen: Minimap vergrößern/verkleinern und verschieben, UI-Skalierung ändern, Button rundherum sowie weit vom Ring weg ziehen. Normales Ziehen muss am Rand bleiben; Umschalt + Ziehen muss frei platzieren. Normales Ziehen oder „Symbol zurück an die Minimap“ heftet wieder an. Beide Positionierungsmodi nach `/reload` sowie Ausblenden/Wiedereinblenden prüfen.
 3. Profil bestätigen, Fenster verschieben und eine Einstellung ändern. `/reload`, Ab-/Anmelden und vollständigen Client-Neustart prüfen. Bleiben die Werte erhalten? Falls nicht, zuerst den SavedVariables-Zustand des Beta-Clients prüfen; keine WTF-Dateien löschen.
 4. Mit einem zweiten Gildenmitglied desselben Regelsets, derselben Fraktion und Addon-Version `/gcp ver` prüfen. Profile, Abmeldungen und Rezeptkataloge abgleichen. Vorname und Nachname müssen vollständig mit der Clientanzeige übereinstimmen; gleicher Vorname mit anderem Nachnamen muss getrennt bleiben. Auch Weiterleitung von Rezepten und Abklingzeiten prüfen.
 5. Berufsfenster öffnen, Berufsrang, Rezept, Materialzahl und tatsächliche Ausbeute vergleichen, neues Rezept lernen. Die Werkstatt muss sich aktualisieren. Herstellen über den vorgesehenen Klick prüfen; eine abgewiesene API darf keinen Erfolg melden. Mehrfachausbeute und optionale Reagenzien gesondert prüfen.

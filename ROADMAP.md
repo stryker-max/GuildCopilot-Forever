@@ -1,5 +1,9 @@
 # Guild Copilot – Entwicklung
 
+## 0.1.0-beta.5: Minimap-Button am Rand
+
+Der angeheftete Button folgt dem aktuellen Minimap-Rand. Normales Ziehen heftet an und verschiebt entlang des Rings; Umschalt + Ziehen platziert frei. Vergrößerte Karten, Größenänderungen und verschiedene UI-Skalierungen sind berücksichtigt; bestehende freie Positionen bleiben erhalten. Im Spiel nach `/reload` beide Modi und das erneute Anheften bei der verwendeten Minimap-Größe prüfen.
+
 ## 0.1.0-beta.4: Postfach und Raidvorbereitung
 
 Die Paketprüfung kontrolliert nun sämtliche ZIP-Zeitstempel. Implizite Ordner mit wechselnder Uhrzeit werden nicht erzeugt, damit aufeinanderfolgende Builds zuverlässig bytegleich bleiben.

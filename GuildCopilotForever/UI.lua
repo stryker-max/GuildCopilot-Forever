@@ -2557,10 +2557,11 @@ function GC.UI:BuildSettingsPage()
     end)
     page.minimapResetButton:SetPoint("TOPLEFT", generalCard, "TOPLEFT", 18, -100)
     CreateLabel(generalCard,
-        "Das Symbol lässt sich frei ziehen: nahe der Minimap am Ring entlang, weiter weg überall hin.", {
+        "Ziehen: am Minimap-Rand. Umschalt + Ziehen: frei platzieren. Normales Ziehen heftet es wieder an.", {
         muted = true,
         width = 460,
         height = 28,
+        multiline = true,
     }):SetPoint("TOPLEFT", generalCard, "TOPLEFT", 258, -100)
 
     -- Der Bewerberton meldet einen fremden Interessenten. Wer nicht rekrutiert,
@@ -12543,10 +12544,12 @@ local function MinimapAngle(y, x)
     return 0
 end
 
--- Ab diesem Abstand zur Minimapmitte loest sich das Symbol vom Ring und steht
--- frei. Der Ring selbst liegt bei 78; der Abstand ist bewusst deutlich groesser,
--- damit ein Verrutschen beim Ziehen am Ring es nicht versehentlich abloest.
-local MINIMAP_FREE_DISTANCE = 130
+-- Die Forever-Minimap kann ihre Groesse aendern. Der Knopf folgt dem Rand
+-- statt einem festen Radius innerhalb der Karte; seine Mitte sitzt am Rahmen.
+local function MinimapRadii()
+    return (tonumber(Minimap:GetWidth()) or 148) / 2 + 4,
+        (tonumber(Minimap:GetHeight()) or 148) / 2 + 4
+end
 
 -- Alles in UIParent-Einheiten rechnen. GetCursorPosition liefert
 -- Bildschirmpixel, GetCenter dagegen Koordinaten im Massstab des jeweiligen
@@ -12565,9 +12568,7 @@ local function MinimapCenterInUISpace()
     return centerX * minimapScale / scale, centerY * minimapScale / scale
 end
 
--- Ring und dunkler Untergrund gehoeren zur Minimap-Optik. Frei platziert sah
--- der offene Goldring wie ein grosses "C" aus (Owner-Screenshot); dort zeigt
--- der Knopf nur noch das Wappen, etwas groesser und mittig.
+-- Frei steht nur das Wappen, am Minimap-Rand mit dem gewohnten Rahmen.
 local function ApplyMinimapButtonChrome(button, free)
     button.border:SetShown(not free)
     button.background:SetShown(not free)
@@ -12583,16 +12584,12 @@ end
 
 function GC.UI:PositionMinimapButton()
     local button = self.minimapButton
-    if not button then
+    if not button or not Minimap then
         return
     end
     local settings = GC.DB:GetSettings().minimap
     button:ClearAllPoints()
     ApplyMinimapButtonChrome(button, settings.free == true)
-
-    -- Frei gesetzt haengt das Symbol an UIParent, nicht mehr an der Minimap:
-    -- Sonst gelten die gespeicherten Koordinaten im Massstab der Minimap und
-    -- das Symbol landet bei abweichender Skalierung woanders.
     if settings.free and UIParent then
         if button:GetParent() ~= UIParent then
             button:SetParent(UIParent)
@@ -12602,16 +12599,13 @@ function GC.UI:PositionMinimapButton()
             tonumber(settings.x) or 0, tonumber(settings.y) or 0)
         return
     end
-
-    if not Minimap then
-        return
-    end
     if button:GetParent() ~= Minimap then
         button:SetParent(Minimap)
         button:SetFrameStrata("MEDIUM")
     end
     local angle = math.rad(tonumber(settings.angle) or 225)
-    button:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * 78, math.sin(angle) * 78)
+    local radiusX, radiusY = MinimapRadii()
+    button:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * radiusX, math.sin(angle) * radiusY)
 end
 
 -- Rueckweg, falls das Symbol irgendwo landet, wo es nicht mehr zu greifen ist.
@@ -12697,7 +12691,8 @@ function GC.UI:AddMinimapButton()
         end
         GameTooltip:AddLine("Linksklick: öffnen/schließen", 1, 1, 1)
         GameTooltip:AddLine("Rechtsklick: Einstellungen", 1, 1, 1)
-        GameTooltip:AddLine("Ziehen: am Ring entlang, weiter weg frei platzieren", 1, 1, 1)
+        GameTooltip:AddLine(GC.L("Ziehen: entlang des Minimap-Rands"), 1, 1, 1)
+        GameTooltip:AddLine(GC.L("Umschalt + Ziehen: frei platzieren"), 1, 1, 1)
         GameTooltip:Show()
     end)
     button:SetScript("OnLeave", function()
@@ -12705,31 +12700,33 @@ function GC.UI:AddMinimapButton()
             GameTooltip:Hide()
         end
     end)
-    -- Ziehen: Nah an der Minimap faehrt das Symbol wie gewohnt auf dem Ring,
-    -- weit genug weggezogen loest es sich und steht frei auf dem Bildschirm.
-    -- So braucht es keinen Schalter - die Bewegung selbst sagt, was gemeint ist.
+    -- Den Modus beim Start festlegen: normales Ziehen heftet an, Umschalt
+    -- platziert frei. Die Entfernung allein loest den Knopf nicht mehr ab.
     button:SetScript("OnDragStart", function(self)
+        local freeDrag = IsShiftKeyDown and IsShiftKeyDown()
         self:SetScript("OnUpdate", function()
             local cursorX, cursorY = CursorInUISpace()
             if not cursorX or not cursorY then
                 return
             end
             local settings = GC.DB:GetSettings().minimap
+            if freeDrag then
+                settings.free = true
+                settings.x, settings.y = math.floor(cursorX), math.floor(cursorY)
+                GC.UI:PositionMinimapButton()
+                return
+            end
             local centerX, centerY = MinimapCenterInUISpace()
             if centerX and centerY then
                 local offsetX = cursorX - centerX
                 local offsetY = cursorY - centerY
-                if math.sqrt((offsetX * offsetX) + (offsetY * offsetY)) <= MINIMAP_FREE_DISTANCE then
-                    settings.free = false
-                    settings.angle = math.deg(MinimapAngle(offsetY, offsetX))
-                    GC.UI:PositionMinimapButton()
-                    return
+                settings.free = false
+                if offsetX ~= 0 or offsetY ~= 0 then
+                    local radiusX, radiusY = MinimapRadii()
+                    settings.angle = math.deg(MinimapAngle(offsetY / radiusY, offsetX / radiusX))
                 end
+                GC.UI:PositionMinimapButton()
             end
-            settings.free = true
-            settings.x = math.floor(cursorX)
-            settings.y = math.floor(cursorY)
-            GC.UI:PositionMinimapButton()
         end)
     end)
     button:SetScript("OnDragStop", function(self)
@@ -12737,6 +12734,8 @@ function GC.UI:AddMinimapButton()
     end)
 
     self.minimapButton = button
+    Minimap:HookScript("OnSizeChanged", function() GC.UI:PositionMinimapButton() end)
+    Minimap:HookScript("OnShow", function() GC.UI:PositionMinimapButton() end)
     self:RefreshMinimapButton()
     self:RefreshMinimapMarker()
 end
