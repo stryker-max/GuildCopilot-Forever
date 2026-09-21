@@ -129,7 +129,7 @@ local english = {
 
     -- === Teilschritt 1: Untertitel der Seiten ==============================
     ["Raidprofil, Berufe und Abmeldung an einem Ort – diese Angaben werden mit Guild-Copilot-Nutzern in deiner Gilde synchronisiert."]
-        = "Raid profile, professions and absences in one place – these details are synchronized with Guild Copilot Forever users in your guild.",
+        = "Raid profile, professions and absences in one place – these details are synchronized with Guild Copilot users in your guild.",
     ["|cff2ec7dbNach zuletzt online sortiert|r – bis zu {n} Level-70-Spieler aus den gewählten Raider-Rängen, mit Rang, Raidprofil und Berufen."]
         = "|cff2ec7dbSorted by last seen online|r – up to {n} level 70 players from the selected raider ranks, with rank, raid profile and professions.",
     ["ZULETZT ONLINE"] = "LAST ONLINE",
@@ -170,8 +170,8 @@ local english = {
         = "Only authorized ranks start sessions; summaries are stored, never raw data. Column headers: click sorts, drag reorders. Hover over a row for full details.",
     ["Fehlende Verzauberungen, leere Pflichtslots und Sockel je Slot. Addon-Nutzer liefern aktuelle Eigendaten; Inspect bleibt der Rückfall für erreichbare Gruppenmitglieder. Es gibt bewusst keine Gesamtnote."]
         = "Missing enchants, empty mandatory slots and sockets per slot. Addon users provide fresh self-reports; inspect remains the fallback for group members in range. There is deliberately no overall score.",
-    ["Lokale Komfortoptionen und gildenweite Berechtigungen für Guild Copilot Forever."]
-        = "Local convenience options and guild-wide permissions for Guild Copilot Forever.",
+    ["Lokale Komfortoptionen und gildenweite Berechtigungen für Guild Copilot."]
+        = "Local convenience options and guild-wide permissions for Guild Copilot.",
 
     -- === Teilschritt 2: Spielbegriffe ======================================
     -- Ausruestungsslots. Die englischen Begriffe sind die offiziellen
@@ -289,7 +289,7 @@ local english = {
     ["Gildenprofil prüfen"] = "Review guild profile",
     ["Gruppe"] = "Group",
     ["Gruppe prüfen"] = "Check group",
-    ["Guild Copilot Forever öffnen"] = "Open Guild Copilot Forever",
+    ["Guild Copilot öffnen"] = "Open Guild Copilot",
     ["Heute"] = "Today",
     ["In Auftrag geben"] = "Place order",
     ["In Gilde einladen"] = "Invite to guild",
@@ -465,7 +465,7 @@ local english = {
     ["Wartet auf {name}."] = "Waiting for {name}.",
     ["… und {n} weitere."] = "… and {n} more.",
     ["Gildenweite Änderungen sind für deinen Rang freigegeben."] = "Guild-wide changes are enabled for your rank.",
-    ["Guild Copilot Forever in der Gilde"] = "Guild Copilot Forever in the guild",
+    ["Guild Copilot in der Gilde"] = "Guild Copilot in the guild",
     ["Kein Interessent ausgewählt."] = "No applicant selected.",
     ["Keine Abmeldung eingetragen."] = "No absence entered.",
     ["Keine Auswertung vorhanden. Auf der Seite Raidauswertung einen Abend wählen."] = "No review available. Pick a night on the Raid Review page.",
@@ -546,7 +546,7 @@ local english = {
     ["Dual-Spec (optional)"] = "Dual spec (optional)",
     ["Raidinstanz betreten"] = "Entering a raid instance",
     ["Noch niemand geprüft."] = "Nobody audited yet.",
-    ["Was Guild Copilot Forever kann"] = "What Guild Copilot Forever does",
+    ["Was Guild Copilot kann"] = "What Guild Copilot does",
     ["Kein Rezept ausgewählt"] = "No recipe selected",
     ["Sprache der Oberfläche:"] = "Interface language:",
     ["Stück insgesamt fertig:"] = "Pieces finished in total:",
@@ -570,7 +570,7 @@ local english = {
     ["Dein Gildenassistent für Rekrutierung, Roster, Berufe und Raidauswertung."] = "Your guild assistant for recruiting, roster, professions and raid reviews.",
     ["Dieser Charakter hat keine Berufe mit Rezepten – hier gibt es nichts zu tun."] = "This character has no professions with recipes – nothing to do here.",
     ["Die Meldung lässt sich mit der Maus dorthin schieben, wo sie nichts verdeckt."] = "The alert can be dragged wherever it covers nothing.",
-    ["Öffne deine Berufe einmal, damit Guild Copilot Forever die bekannten Rezepte einliest."] = "Open your professions once so Guild Copilot Forever can read your known recipes.",
+    ["Öffne deine Berufe einmal, damit Guild Copilot die bekannten Rezepte einliest."] = "Open your professions once so Guild Copilot can read your known recipes.",
     ["Noch nichts gewählt.\n\nLinks eine Klasse öffnen und ganze Klasse oder Specs auswählen."] = "Nothing selected yet.\n\nOpen a class on the left and pick the whole class or single specs.",
     ["Alles liegt in einem Fenster – die Seitenleiste links gliedert es von oben nach unten:"] = "Everything lives in one window – the sidebar on the left structures it top to bottom:",
     ["Geändert – noch nicht bestätigt. In der Gilde steht weiter der zuletzt bestätigte Stand."] = "Changed – not confirmed yet. The guild still sees the last confirmed version.",
@@ -592,7 +592,7 @@ local english = {
     ["Trage hier direkt ein, wann du nicht verfügbar bist. Mitgliederpflege und Roster berücksichtigen den Zeitraum automatisch."] = "Enter directly when you are unavailable. Member care and roster respect the period automatically.",
     ["Twinks, aktiv Abgemeldete und geschützte Ränge werden ausgeblendet. „Prüfen“ bedeutet: Main/Twink-Status ist nicht bestätigt."] = "Alts, active absences and protected ranks are hidden. \"Check\" means: main/alt status is not confirmed.",
     ["Automatisch aus deinen Fähigkeiten übernommen. Neue Rezepte wandern beim Öffnen des Berufsfensters von selbst in die Werkstatt."] = "Taken automatically from your skills. New recipes flow into the workshop by themselves when you open the profession window.",
-    ["Du kannst die Einrichtung jederzeit neu starten: mit /gcpf welcome oder über den Knopf „Einrichtung“ oben im Guild-Copilot-Fenster."] = "You can restart the setup anytime: with /gcpf welcome or via the Setup button at the top of the Guild Copilot Forever window.",
+    ["Du kannst die Einrichtung jederzeit neu starten: mit /gcp welcome oder über den Knopf „Einrichtung“ oben im Guild-Copilot-Fenster."] = "You can restart the setup anytime: with /gcp welcome or via the Setup button at the top of the Guild Copilot window.",
     ["Nur diese Ränge sehen die Mitgliederpflege - und nur sie dürfen Raidauswertungen löschen. Die Freigabe wird gildenweit synchronisiert."] = "Only these ranks see member care - and only they may delete raid reviews. The permission is synchronized guild-wide.",
     ["Nur die aktuelle Gruppe. Addon-Nutzer liefern selbst, der Rest per Inspect in Reichweite. Klick auf eine Zeile zeigt die Verzauberungen."] = "Only the current group. Addon users report themselves, the rest via inspect in range. Click a row to see the enchants.",
     ["Ohne diesen Schalter bleibt jede nicht bewertete Verzauberung \"Unbekannt\". Er bewertet keine Qualität, er unterscheidet nur verzaubert von nicht verzaubert."] = "Without this switch every unrated enchant stays \"Unknown\". It rates no quality, it only distinguishes enchanted from not enchanted.",
@@ -600,16 +600,16 @@ local english = {
     ["Nur diese Ränge hören den Ton, wenn sich jemand im Postfach meldet. Das Postfach füllt sich für alle weiter, nur still. Die Freigabe wird gildenweit synchronisiert."] = "Only these ranks hear the sound when someone lands in the inbox. The inbox keeps filling for everyone, just silently. The permission is synchronized guild-wide.",
     ["Gib einen Rezept- oder Spielernamen ein, wähle einen Beruf oder öffne deine Favoriten.\n\nSo bleibt die Werkstatt auch mit tausenden bekannten Rezepten übersichtlich."] = "Enter a recipe or player name, pick a profession or open your favorites.\n\nThis keeps the workshop tidy even with thousands of known recipes.",
     ["Diese Texte füllen die drei Knöpfe oben. Sie gelten gildenweit. Platzhalter: {name}, {gilde}, {beschreibung}, {raidzeiten}, {progress}, {loot}, {discord}, {kontakt}."] = "These texts fill the three buttons above. They apply guild-wide. Placeholders: {name}, {gilde}, {beschreibung}, {raidzeiten}, {progress}, {loot}, {discord}, {kontakt}.",
-    ["|cffe8b84bHinweis:|r Gerade ist niemand mit Guild Copilot Forever online. Der Auftrag wird gespeichert und verteilt sich, sobald du gemeinsam mit anderen Addon-Nutzern online bist."] = "|cffe8b84bNote:|r nobody with Guild Copilot Forever is online right now. The order is stored and spreads once you are online together with other addon users.",
+    ["|cffe8b84bHinweis:|r Gerade ist niemand mit Guild Copilot online. Der Auftrag wird gespeichert und verteilt sich, sobald du gemeinsam mit anderen Addon-Nutzern online bist."] = "|cffe8b84bNote:|r nobody with Guild Copilot is online right now. The order is stored and spreads once you are online together with other addon users.",
     ["|cff91a3b8Noch keine Log-Daten importiert.|r\nDie gespeicherte URL ist für den Companion vorbereitet. Importiert ein anderes Gildenmitglied, erscheinen die Profile auch hier von selbst."] = "|cff91a3b8No log data imported yet.|r\nThe saved URL is prepared for the companion. If another guild member imports, the profiles appear here by themselves.",
-    ["Ohne API: Name;Klasse;Primär-Spec;Dual-Spec – z. B. Nexarius;Magier;Arkan;Frost.\nAutomatisch: Im Guild-Copilot-Installer „Import erzeugen“; die Companion-CMD bleibt als Rückfall. Danach hier mit Strg+V einfügen."] = "Without API: Name;Class;PrimarySpec;DualSpec – e.g. Nexarius;Mage;Arcane;Frost.\nAutomatic: use \"Create import\" in the Guild Copilot Forever installer; the companion CMD remains the fallback. Then paste here with Ctrl+V.",
+    ["Ohne API: Name;Klasse;Primär-Spec;Dual-Spec – z. B. Nexarius;Magier;Arkan;Frost.\nAutomatisch: Im Guild-Copilot-Installer „Import erzeugen“; die Companion-CMD bleibt als Rückfall. Danach hier mit Strg+V einfügen."] = "Without API: Name;Class;PrimarySpec;DualSpec – e.g. Nexarius;Mage;Arcane;Frost.\nAutomatic: use \"Create import\" in the Guild Copilot installer; the companion CMD remains the fallback. Then paste here with Ctrl+V.",
     ["Deine beiden Hauptberufe – vom Addon aus deinen Fähigkeiten gelesen, sonst hier von Hand wählbar. Für die Rezepte in der Gildenwerkstatt musst du dein Berufsfenster einmal öffnen; die Namen allein genügen dafür nicht."] = "Your two primary professions – read from your skills, otherwise pickable by hand. For the recipes in the guild workshop you must open your profession window once; the names alone are not enough.",
     ["Ein WoW-Addon darf selbst nichts aus dem Internet laden – deshalb übernimmt der Windows-Helfer den Abruf. Die hier gespeicherte Gilde erspart dir dort die Eingabe, liefert Region und Realm für die Profil-Links im Postfach und wird an alle Gildenmitglieder synchronisiert."] = "A WoW addon may not load anything from the internet itself – the Windows companion does the fetching. The guild saved here spares you the input there, provides region and realm for the profile links in the inbox, and is synchronized to all guild members.",
     ["Ein Wort oder eine Wendung je Zeile, Groß- und Kleinschreibung ist gleich. Ein Ausschlusswort verhindert den Eintrag auch dann, wenn ein Trigger passt. Leere Trigger-Felder bedeuten „Vorgabe“, nicht „nichts“ – abschalten lässt sich die Erkennung über die Schalter darüber. Diese Listen gelten nur für dich."] = "One word or phrase per line, case does not matter. An exclusion word prevents the entry even when a trigger matches. Empty trigger fields mean \"default\", not \"nothing\" – the detection is disabled via the switches above. These lists apply only to you.",
 
     -- === Hinweis auf eine neuere Fassung (0.9.118) =========================
     ["Version {new} ist verfügbar – du hast {own}. Aktualisieren über die CurseForge-App oder den Guild-Copilot-Installer."]
-        = "Version {new} is available – you have {own}. Update via the CurseForge app or the Guild Copilot Forever installer.",
+        = "Version {new} is available – you have {own}. Update via the CurseForge app or the Guild Copilot installer.",
     ["Version {new} verfügbar"] = "Version {new} available",
     ["Deine Version: {own}"] = "Your version: {own}",
     ["Deine Version: {own}  •  |cffffb840{new} ist verfügbar|r"]
@@ -830,7 +830,7 @@ local english = {
     ["{grund}: zählt nicht als Fund."] = "{grund}: does not count as a finding.",
 
     -- === Teilschritt 4: Kern-Chatmeldungen (mit Platzhaltern) ==============
-    ["v{v} geladen. Öffnen mit |cffffffff/gcpf|r."] = "v{v} loaded. Open with |cffffffff/gcpf|r.",
+    ["v{v} geladen. Öffnen mit |cffffffff/gcp|r."] = "v{v} loaded. Open with |cffffffff/gcp|r.",
     ["Raidsitzung gestartet. Anwesenheit und Auswertung laufen mit."] = "Raid session started. Attendance and review are being recorded.",
     ["Es läuft bereits eine Sitzung."] = "A session is already running.",
     ["Die Raidsitzung läuft bereits – gestartet von {name}."] = "The raid session is already running – started by {name}.",

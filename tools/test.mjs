@@ -6,7 +6,7 @@ import JSZip from 'jszip';
 import { root, source, addonName, files, packageAddon } from './package.mjs';
 const toc = readFileSync(join(source, addonName + '.toc'), 'utf8');
 assert.match(toc, /^## Interface: 16001$/m);
-assert.match(toc, /^## Title: Guild Copilot Forever$/m);
+assert.match(toc, /^## Title: Guild Copilot$/m);
 assert.match(toc, /^## SavedVariables: GuildCopilotForeverDB$/m);
 const version = toc.match(/^## Version: (.+)$/m)[1].trim();
 assert.equal(version, JSON.parse(readFileSync(join(root, 'package.json'))).version);

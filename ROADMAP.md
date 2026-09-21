@@ -1,4 +1,8 @@
-# Guild Copilot Forever – Entwicklung
+# Guild Copilot – Entwicklung
+
+## 0.1.0-beta.3: bestehenden Namen und Befehl beibehalten
+
+Der Produktname bleibt **Guild Copilot**, der Befehl **`/gcp`** mit Alias **`/guildcopilot`**. Das gilt auch für Titel, Einstellungen, Chat-Ausgaben, Einrichtungsassistent und Übersetzungen. Das vorhandene GitHub-Repository `stryker-max/GuildCopilot-Forever` enthält die Forever-Fassung; seine technische Trennung ist keine Produktumbenennung.
 
 ## 0.1.0-beta.2: Abgleich mit dem Forever-Client
 
@@ -26,5 +30,5 @@ Die [Beta-Checkliste](docs/BETA-ABNAHME.md) im Spiel ausführen: Start, Sichtpr�
 
 - Forever-Regelsatz für Ausrüstung und Verzauberungspflichten, jeweils mit Quellen und eigener Regelversion.
 - Bestätigte Instanzvorgaben und Gruppengrößen.
-- Anpassungen nach weiteren Beta-Builds; Diagnose über `/gcpf client`.
+- Anpassungen nach weiteren Beta-Builds; Diagnose über `/gcp client`.
 - Separate CurseForge-Projektanlage nur bei einer ausdrücklichen Veröffentlichungsentscheidung.

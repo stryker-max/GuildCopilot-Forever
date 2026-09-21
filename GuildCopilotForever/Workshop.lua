@@ -2581,7 +2581,7 @@ function GC.Workshop:AnswerRecipeWhisper(message, sender)
     local matches = self:GetCatalog(query)
     local reply
     if #matches == 0 then
-        reply = "Guild Copilot Forever: Zu „" .. GC.Util.SafeChatText(query, 40)
+        reply = "Guild Copilot: Zu „" .. GC.Util.SafeChatText(query, 40)
             .. "“ steht nichts im Gildenkatalog."
     else
         local entry = matches[1]
@@ -2597,7 +2597,7 @@ function GC.Workshop:AnswerRecipeWhisper(message, sender)
         if #entry.crafters > #crafters then
             crafters[#crafters + 1] = "+" .. (#entry.crafters - #crafters) .. " weitere"
         end
-        reply = "Guild Copilot Forever: " .. entry.name
+        reply = "Guild Copilot: " .. entry.name
             .. (#parts > 0 and (" – Mats: " .. table.concat(parts, ", ")) or "")
             .. (#entry.crafters > 0 and (" – können: " .. table.concat(crafters, ", ")) or "")
             .. (#matches > 1 and (" (+" .. (#matches - 1) .. " Treffer)") or "")

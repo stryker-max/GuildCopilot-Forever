@@ -7,7 +7,7 @@ GC.callbacks = {}
 GC.initialized = false
 
 function GC:Print(message)
-    local prefix = "|cff4ec9ffGuild Copilot Forever:|r "
+    local prefix = "|cff4ec9ffGuild Copilot:|r "
     if DEFAULT_CHAT_FRAME then
         DEFAULT_CHAT_FRAME:AddMessage(prefix .. tostring(message))
     end
@@ -40,7 +40,7 @@ end
 --
 -- Ob ein Ruckler vom Addon kommt, laesst sich nicht aus dem Code lesen, nur
 -- messen. Diese Messung ist standardmaessig aus und kostet dann genau einen
--- Tabellenzugriff je Aufruf; eingeschaltet wird sie mit "/gcpf debug".
+-- Tabellenzugriff je Aufruf; eingeschaltet wird sie mit "/gcp debug".
 --
 -- Gemessen wird mit debugprofilestop() statt GetTimePreciseSec(): Ersteres
 -- gibt es in jeder Spielfassung, Letzteres nicht.
@@ -84,7 +84,7 @@ function GC.Perf:Measure(label, fn, ...)
     --
     -- Hier stand "fn(...)" ohne return: Ausgeschaltet lieferte die Messung das
     -- Ergebnis der gemessenen Funktion, eingeschaltet nichts. Damit aenderte
-    -- "/gcpf debug" das Programmverhalten statt es nur zu beobachten - eine
+    -- "/gcp debug" das Programmverhalten statt es nur zu beobachten - eine
     -- Messung, die das Gemessene veraendert, ist wertlos, und der naechste
     -- Aufrufer waere darauf hereingefallen. Die Zwischentabelle kostet eine
     -- Belegung je Aufruf; das ist genau dann hinnehmbar, wenn ohnehin gemessen
@@ -639,7 +639,7 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         GC.playerFullName = nil
         GC:RefreshGuildKey(false)
         GC:FireCallback("PLAYER_LOGIN")
-        GC:Print(GC.LFormat("v{v} geladen. Öffnen mit |cffffffff/gcpf|r.",
+        GC:Print(GC.LFormat("v{v} geladen. Öffnen mit |cffffffff/gcp|r.",
             { v = GC.Constants.VERSION }))
     elseif event == "PLAYER_GUILD_UPDATE" then
         -- Ab hier steht der Gildenzustand des Clients fest - auch ein "keine

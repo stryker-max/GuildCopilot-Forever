@@ -1547,7 +1547,7 @@ function GC.Orders:NotifyNewOrder(order)
         "Neuer Gildenauftrag von " .. GC.Util.PlayerIdentityName(order.createdBy or "?"))
 end
 
--- Wie viele andere Gildenmitglieder mit Guild Copilot Forever sind laut Roster gerade
+-- Wie viele andere Gildenmitglieder mit Guild Copilot sind laut Roster gerade
 -- online? Die Zahl traegt den Hinweis im Erstellen-Dialog: Ohne gemeinsame
 -- Onlinezeit erreicht ein Auftrag niemanden - es gibt keinen Server, nur
 -- Clients, die sich gegenseitig erzaehlen, was sie wissen.

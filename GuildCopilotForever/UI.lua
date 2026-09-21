@@ -36,12 +36,12 @@ local THEME = {
 -- Karte auf der Einstellungsseite lesen alle hier. Zwei Listen liefen
 -- auseinander (Lektion aus 0.9.47).
 local SLASH_COMMANDS = {
-    { command = "/gcpf", description = "öffnet und schließt Guild Copilot Forever" },
-    { command = "/gcpf ver", description = "prüft, wer in Gruppe oder Gilde das Addon hat und in welcher Version" },
-    { command = "/gcpf welcome", description = "öffnet den Einrichtungsassistenten mit der Funktionstour" },
-    { command = "/gcpf recruite", description = "blendet den Werbebalken ein oder aus" },
-    { command = "/gcpf debug", description = "misst die Laufzeit; ein zweiter Aufruf zeigt das Ergebnis" },
-    { command = "/gcpf help", description = "zeigt diese Liste im Chat" },
+    { command = "/gcp", description = "öffnet und schließt Guild Copilot" },
+    { command = "/gcp ver", description = "prüft, wer in Gruppe oder Gilde das Addon hat und in welcher Version" },
+    { command = "/gcp welcome", description = "öffnet den Einrichtungsassistenten mit der Funktionstour" },
+    { command = "/gcp recruite", description = "blendet den Werbebalken ein oder aus" },
+    { command = "/gcp debug", description = "misst die Laufzeit; ein zweiter Aufruf zeigt das Ergebnis" },
+    { command = "/gcp help", description = "zeigt diese Liste im Chat" },
 }
 
 -- Masse der Seitenleiste. Sie muessen zur Fensterhoehe passen: kommt ein
@@ -1385,7 +1385,7 @@ function GC.UI:CreateMainFrame()
     frame:EnableKeyboard(false)
     frame:Hide()
     table.insert(UISpecialFrames, "GuildCopilotForeverFrame")
-    -- Schliessen ueber ×, Escape oder /gcpf: Ein Fokus in einem der eigenen
+    -- Schliessen ueber ×, Escape oder /gcp: Ein Fokus in einem der eigenen
     -- Felder darf das Fenster nicht ueberleben (siehe ReleaseOwnKeyboardFocus).
     frame:HookScript("OnHide", function(self)
         ReleaseOwnKeyboardFocus(self)
@@ -1403,7 +1403,7 @@ function GC.UI:CreateMainFrame()
     mark:SetPoint("LEFT", header, "LEFT", 16, 0)
     mark:SetTexture("Interface\\AddOns\\GuildCopilotForever\\Media\\GuildCopilotForeverLogo")
 
-    local title = CreateLabel(header, "Guild Copilot Forever", { title = true })
+    local title = CreateLabel(header, "Guild Copilot", { title = true })
     title:SetPoint("LEFT", mark, "RIGHT", 12, 7)
     local subtitle = CreateLabel(header, GC.Client.label .. "  •  v" .. GC.Constants.VERSION, { muted = true })
     subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -2)
@@ -2059,7 +2059,7 @@ function GC.UI:BuildDashboardPage()
         end
         local stats = GC.Sync:GetAddonUserStats()
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-        GameTooltip:SetText(GC.L("Guild Copilot Forever in der Gilde"))
+        GameTooltip:SetText(GC.L("Guild Copilot in der Gilde"))
         GameTooltip:AddLine(stats.players .. " Spieler mit "
             .. stats.known .. " erkannten Charakteren, davon " .. stats.compatible
             .. " mit passender Datenversion", 1, 1, 1, true)
@@ -2303,7 +2303,7 @@ end
 function GC.UI:BuildSettingsPage()
     local page = self.pages.SETTINGS
     CreatePageTitle(page, "Einstellungen",
-        "Lokale Komfortoptionen und gildenweite Berechtigungen für Guild Copilot Forever.")
+        "Lokale Komfortoptionen und gildenweite Berechtigungen für Guild Copilot.")
 
     local scroll = CreateModernScrollFrame(page)
     scroll:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -58)
@@ -2892,7 +2892,7 @@ function GC.UI:BuildSettingsPage()
     }):SetPoint("TOPLEFT", windowCard, "TOPLEFT", 18, -122)
 
     -- Die Chatbefehle dort, wo man sie sucht (Owner-Wunsch): auf der
-    -- Einstellungsseite, gespeist aus derselben Tabelle wie /gcpf help.
+    -- Einstellungsseite, gespeist aus derselben Tabelle wie /gcp help.
     local commandCard = CreateCard(content, "Chat-Befehle")
     commandCard:SetSize(752, 156)
     commandCard:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
@@ -3244,7 +3244,7 @@ end
 -- Vorzeitiges Schliessen, egal ob ueber das × oder "Spaeter": zuklappen und
 -- beim ersten Mal je Charakter den Weg zurueck erklaeren. Ein gemeinsamer
 -- Weg fuer beide Knoepfe - die Frage "wie komme ich zurueck?" stellt sich
--- nur einmal, nicht einmal je Knopf. "Fertig" und "Guild Copilot Forever öffnen"
+-- nur einmal, nicht einmal je Knopf. "Fertig" und "Guild Copilot öffnen"
 -- gehen bewusst NICHT hierdurch: Wer durch ist, verabschiedet sich nicht
 -- auf spaeter.
 function GC.UI:HideWelcomeWithHint()
@@ -3276,7 +3276,7 @@ function GC.UI:ShowWizardLaterHint()
         })
         title:SetPoint("TOP", hint, "TOP", 0, -16)
         local text = CreateLabel(hint,
-            "Du kannst die Einrichtung jederzeit neu starten: mit /gcpf welcome"
+            "Du kannst die Einrichtung jederzeit neu starten: mit /gcp welcome"
                 .. " oder über den Knopf „Einrichtung“ oben im Guild-Copilot-Fenster.",
             { muted = true, align = "CENTER", width = 360, height = 46, vertical = "TOP" })
         text:SetPoint("TOP", hint, "TOP", 0, -44)
@@ -3299,7 +3299,7 @@ end
 local function BuildWizardTourPage(frame)
     local page = CreateWizardPage(frame, "TOUR")
 
-    local heading = CreateLabel(page, "Was Guild Copilot Forever kann", {
+    local heading = CreateLabel(page, "Was Guild Copilot kann", {
         title = true,
         align = "CENTER",
         width = 508,
@@ -3357,7 +3357,7 @@ local function BuildWizardProfilePage(frame)
     local page = CreateWizardPage(frame, "STEP_PROFILE")
     CreateWizardStepHeader(page, "Schritt 1 von 3", "Raidprofil bestätigen",
         "Damit Raidleitung und Rekrutierung wissen, was sie an dir haben."
-            .. " Die Spec liest Guild Copilot Forever aus deinen Talenten – bestätigen genügt.")
+            .. " Die Spec liest Guild Copilot aus deinen Talenten – bestätigen genügt.")
 
     page.detected = CreateLabel(page, "", { width = 508, height = 16 })
     page.detected:SetPoint("TOPLEFT", page, "TOPLEFT", 26, -104)
@@ -3435,7 +3435,7 @@ local function BuildWizardProfessionsPage(frame)
     local page = CreateWizardPage(frame, "STEP_PROFESSIONS")
     CreateWizardStepHeader(page, "Schritt 2 von 3", "Rezepte einlesen",
         "WoW gibt Rezepte nur heraus, solange das Berufsfenster offen ist."
-            .. " Der Knopf öffnet es direkt – alles Weitere liest Guild Copilot Forever von selbst.")
+            .. " Der Knopf öffnet es direkt – alles Weitere liest Guild Copilot von selbst.")
 
     page.rows = {}
     for index = 1, 2 do
@@ -3500,7 +3500,7 @@ end
 local function BuildWizardGearPage(frame)
     local page = CreateWizardPage(frame, "STEP_GEAR")
     CreateWizardStepHeader(page, "Schritt 3 von 3", "Ausrüstung prüfen",
-        "Hier musst du nichts tun: Guild Copilot Forever prüft deine angelegten Gegenstände"
+        "Hier musst du nichts tun: Guild Copilot prüft deine angelegten Gegenstände"
             .. " selbst auf fehlende Verzauberungen und leere Sockel.")
 
     page.findings = CreateLabel(page, "", { width = 508, height = 96, vertical = "TOP" })
@@ -3532,8 +3532,8 @@ local function BuildWizardDonePage(frame)
     page.status:SetPoint("TOPLEFT", page, "TOPLEFT", 26, -52)
 
     local lines = {
-        "Das Minimap-Symbol öffnet Guild Copilot Forever. Ein Punkt daran heißt: Hier wartet etwas auf dich.",
-        "/gcpf öffnet und schließt das Fenster, /gcpf help zeigt alle Befehle im Chat.",
+        "Das Minimap-Symbol öffnet Guild Copilot. Ein Punkt daran heißt: Hier wartet etwas auf dich.",
+        "/gcp öffnet und schließt das Fenster, /gcp help zeigt alle Befehle im Chat.",
         "Der Knopf „Einrichtung“ im Fensterkopf bringt dich jederzeit zu diesem Assistenten zurück.",
     }
     for index, text in ipairs(lines) do
@@ -3546,7 +3546,7 @@ local function BuildWizardDonePage(frame)
         label:SetPoint("TOPLEFT", page, "TOPLEFT", 48, -100 - ((index - 1) * 50))
     end
 
-    local open = CreateButton(page, "Guild Copilot Forever öffnen", 220, 40, function()
+    local open = CreateButton(page, "Guild Copilot öffnen", 220, 40, function()
         GC.UI:HideWelcome()
         GC.UI:CreateMainFrame()
         GC.UI.frame:Show()
@@ -3633,7 +3633,7 @@ function GC.UI:CreateWelcomeFrame()
             if GC.Chat and GC.Chat.PlaySuccessSound then
                 GC.Chat:PlaySuccessSound("LEVEL_UP")
             end
-            GC.UI:ShowOrderBanner("Guild Copilot Forever is ready for takeoff")
+            GC.UI:ShowOrderBanner("Guild Copilot is ready for takeoff")
             GC.UI:HideWelcome()
         else
             GC.Onboarding:WizardGo(1)
@@ -5489,7 +5489,7 @@ function GC.UI:BuildWorkshopPage()
         { muted = true, width = 274, height = 30, vertical = "TOP" })
 
     page.workshopStatus = CreateLabel(page,
-        "Öffne deine Berufe einmal, damit Guild Copilot Forever die bekannten Rezepte einliest.",
+        "Öffne deine Berufe einmal, damit Guild Copilot die bekannten Rezepte einliest.",
         { muted = true, width = 776, height = 16 })
     page.workshopStatus:SetPoint("BOTTOMLEFT", page, "BOTTOMLEFT", 0, 0)
 
@@ -6982,7 +6982,7 @@ function GC.UI:BuildOrderCreateDialog(page)
             GC.UI:SetWorkshopView("ORDERS")
             if GC.Orders:GetOnlineAddonUserCount() == 0 then
                 GC.UI:SetOrdersStatus((message or "")
-                    .. " |cffe8b84bGerade ist niemand mit Guild Copilot Forever online - "
+                    .. " |cffe8b84bGerade ist niemand mit Guild Copilot online - "
                     .. "verteilt wird beim nächsten gemeinsamen Login.|r", true)
             else
                 GC.UI:SetOrdersStatus(message, true)
@@ -7060,7 +7060,7 @@ function GC.UI:OpenOrderCreateDialog(recipeKey)
     -- der Auftrag geht nicht verloren, aber er erreicht die Gilde erst
     -- beim nächsten gemeinsamen Online-Moment.
     if GC.Orders:GetOnlineAddonUserCount() == 0 then
-        dialog.status:SetText(GC.L("|cffe8b84bHinweis:|r Gerade ist niemand mit Guild Copilot Forever online. "
+        dialog.status:SetText(GC.L("|cffe8b84bHinweis:|r Gerade ist niemand mit Guild Copilot online. "
             .. "Der Auftrag wird gespeichert und verteilt sich, sobald du gemeinsam "
             .. "mit anderen Addon-Nutzern online bist."))
         SetTextColor(dialog.status, THEME.text)
@@ -7396,7 +7396,7 @@ function GC.UI:OpenOrderStatsDialog()
         -- wurde, ist als Auftrag gezählt, aber nie als Stückzahl - eine 0
         -- neben vier erledigten Aufträgen wäre sonst ein Rätsel.
         if totalItems < totalOrders then
-            lines[#lines + 1] = "\nStückzahlen zählt Guild Copilot Forever seit Version 0.9.110;"
+            lines[#lines + 1] = "\nStückzahlen zählt Guild Copilot seit Version 0.9.110;"
                 .. " ältere Aufträge stehen nur mit ihrer Anzahl darin."
         end
     end
@@ -8188,7 +8188,7 @@ local function AttachAutoRepeatTooltip(toggle)
             .. " nächsten Tastendruck raus – gleich welche Taste, auch beim Laufen.", 0.31, 0.79, 1, true)
         GameTooltip:AddLine("Bestätigungspflicht und Cooldowns gelten unverändert."
             .. " Balken geschlossen = Automatik pausiert."
-            .. " Welche Taste du drückst, liest Guild Copilot Forever nicht.", 1, 0.72, 0.25, true)
+            .. " Welche Taste du drückst, liest Guild Copilot nicht.", 1, 0.72, 0.25, true)
         GameTooltip:Show()
     end)
     toggle:HookScript("OnLeave", function()
@@ -12655,7 +12655,7 @@ function GC.UI:AddMinimapButton()
             return
         end
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:SetText(GC.L("Guild Copilot Forever"))
+        GameTooltip:SetText(GC.L("Guild Copilot"))
         local nextStep = GC.Onboarding:GetNextStep()
         if nextStep then
             GameTooltip:AddLine("Einrichtung offen: " .. nextStep, 0.18, 0.78, 0.86, true)
@@ -12708,7 +12708,7 @@ function GC.UI:AddMinimapButton()
 end
 
 -- Die Slash-Befehle an genau einer Stelle. Daraus entstehen die Ausgabe von
--- "/gcpf help" und die Liste auf der Addon-Optionsseite: Zwei getrennte
+-- "/gcp help" und die Liste auf der Addon-Optionsseite: Zwei getrennte
 -- Aufzaehlungen laufen auseinander, sobald ein Befehl dazukommt - und die
 -- Liste, die niemand pflegt, ist dann die falsche.
 -- === Sitzungsfrage beim Instanzbeitritt =====================================
@@ -13900,7 +13900,7 @@ GC:RegisterCallback("RAID_SUMMARY_ANSWERS", GC.UI, function(self)
 end)
 
 -- === Versionsprüfer =========================================================
--- /gcpf ver: Wer in Gruppe oder Gilde hat Guild Copilot Forever, und in welcher
+-- /gcp ver: Wer in Gruppe oder Gilde hat Guild Copilot, und in welcher
 -- Version? Grün ist der eigene Stand, rot ist älter, gelb wartet noch,
 -- "Nicht installiert" hat nach acht Sekunden nicht geantwortet.
 
@@ -14167,7 +14167,7 @@ function GC.UI:PrintSlashHelp()
     for _, entry in ipairs(SLASH_COMMANDS) do
         GC:Print("  |cffffffff" .. entry.command .. "|r – " .. entry.description)
     end
-    GC:Print("  |cff91a3b8/guildcopilotforever|r tut überall dasselbe wie |cff91a3b8/gcpf|r.")
+    GC:Print("  |cff91a3b8/guildcopilot|r tut überall dasselbe wie |cff91a3b8/gcp|r.")
 end
 
 function GC.UI:RegisterInterfaceOptions()
@@ -14176,7 +14176,7 @@ function GC.UI:RegisterInterfaceOptions()
     end
 
     local panel = CreateFrame("Frame")
-    panel.name = "Guild Copilot Forever"
+    panel.name = "Guild Copilot"
 
     local wordmark = panel:CreateTexture(nil, "ARTWORK")
     wordmark:SetSize(300, 300)
@@ -14190,7 +14190,7 @@ function GC.UI:RegisterInterfaceOptions()
         width = 300,
     })
     commandLabel:SetPoint("TOP", wordmark, "BOTTOM", 0, -8)
-    local command = CreateLabel(panel, "/gcpf", {
+    local command = CreateLabel(panel, "/gcp", {
         title = true,
         align = "CENTER",
         width = 300,
@@ -14215,7 +14215,7 @@ function GC.UI:RegisterInterfaceOptions()
         previous = row
     end
 
-    panel.openButton = CreateButton(panel, "Guild Copilot Forever öffnen", 220, 40, function()
+    panel.openButton = CreateButton(panel, "Guild Copilot öffnen", 220, 40, function()
         if InterfaceOptionsFrame and InterfaceOptionsFrame:IsShown() then
             if HideUIPanel then
                 HideUIPanel(InterfaceOptionsFrame)
@@ -14250,8 +14250,8 @@ function GC.UI:RegisterInterfaceOptions()
     self.optionsPanel = panel
 end
 
-SLASH_GUILDCOPILOTFOREVER1 = "/gcpf"
-SLASH_GUILDCOPILOTFOREVER2 = "/guildcopilotforever"
+SLASH_GUILDCOPILOTFOREVER1 = "/gcp"
+SLASH_GUILDCOPILOTFOREVER2 = "/guildcopilot"
 SlashCmdList.GUILDCOPILOTFOREVER = function(input)
     local command = GC.Util.Trim(tostring(input or "")):lower()
     if command == "client" then
@@ -14286,24 +14286,24 @@ SlashCmdList.GUILDCOPILOTFOREVER = function(input)
 
     -- Ob ein Ruckler vom Addon kommt, laesst sich nur messen. Standardmaessig
     -- ist die Messung aus; wer sie einschaltet, spielt eine Weile und ruft
-    -- "/gcpf debug" erneut auf, bekommt die schlimmsten Einzelmessungen.
+    -- "/gcp debug" erneut auf, bekommt die schlimmsten Einzelmessungen.
     if command == "debug" then
         if GC.Perf.enabled then
             for _, line in ipairs(GC.Perf:Report()) do
                 GC:Print(line)
             end
             GC.Perf.enabled = false
-            GC:Print("Messung beendet. Erneut einschalten mit /gcpf debug.")
+            GC:Print("Messung beendet. Erneut einschalten mit /gcp debug.")
         else
             GC.Perf:Reset()
             GC.Perf.enabled = true
-            GC:Print("Messung läuft. Spiel eine Weile weiter und ruf /gcpf debug erneut auf.")
+            GC:Print("Messung läuft. Spiel eine Weile weiter und ruf /gcp debug erneut auf.")
         end
         return
     end
 
     -- Der Versionsprüfer: Wer in Gruppe oder Gilde hat das Addon, und in
-    -- welcher Version? ("/gcpf phase" ist auf Owner-Wunsch entfallen; die
+    -- welcher Version? ("/gcp phase" ist auf Owner-Wunsch entfallen; die
     -- Content-Phase läuft intern mit ihrer Voreinstellung und dem
     -- Gildenabgleich weiter.)
     if command == "ver" or command == "version" then

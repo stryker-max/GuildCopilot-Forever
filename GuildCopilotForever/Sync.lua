@@ -589,7 +589,7 @@ end
 
 -- Grosse Datenmengen landen in einer gemeinsamen, durchsatzorientierten
 -- Warteschlange. Ein vorhandenes ChatThrottleLib kennt auch den Verkehr
--- anderer Addons; der eingebaute Fallback macht Guild Copilot Forever eigenstaendig.
+-- anderer Addons; der eingebaute Fallback macht Guild Copilot eigenstaendig.
 -- "untracked" schaltet die Fortschrittszaehlung fuer dieses Paket ab. Genau ein
 -- Aufrufer braucht das: der bestaetigte Fluestertransfer. Seine Teile werden
 -- ueber die ACK-Liste gezaehlt und wuerden hier ein zweites Mal auftauchen -
@@ -2205,7 +2205,7 @@ function GC.Sync:AnnounceVersion(requestReply, minimumInterval, distribution)
     return true
 end
 
--- Der Versionsprüfer (/gcpf ver) fragt gezielt an: in der Gilde über den
+-- Der Versionsprüfer (/gcp ver) fragt gezielt an: in der Gilde über den
 -- Gildenkanal, in der Gruppe über RAID/PARTY - dort erreichen die Antworten
 -- auch Mitglieder fremder Gilden.
 function GC.Sync:RequestVersionCheck(mode)

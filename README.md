@@ -1,13 +1,13 @@
-# Guild Copilot Forever 0.1.0-beta.2
+# Guild Copilot 0.1.0-beta.3
 
 Eigenständige Portierung von [Guild Copilot für TBC Anniversary](https://github.com/stryker-max/GuildCopilot) für **World of Warcraft: Forever Beta 1.60.1.69913**, Interface **16001**.
 
 ## Installation
 
-1. Das Paket `GuildCopilotForever-0.1.0-beta.2.zip` entpacken.
+1. Das Paket `GuildCopilotForever-0.1.0-beta.3.zip` entpacken.
 2. Den darin enthaltenen Ordner `GuildCopilotForever` nach `World of Warcraft/_classic_beta_/Interface/AddOns/` kopieren.
-3. Den WoW-Client vollständig neu starten, wenn das Addon neu hinzugefügt wurde. In der Addon-Liste **Guild Copilot Forever** aktivieren.
-4. Im Spiel mit **`/gcpf`** öffnen. **`/gcpf client`** zeigt Client, Addon-Version, Datenbank und Sync-Kanal; **`/gcpf ver`** zeigt die Versionen in der Gilde/Gruppe.
+3. Den WoW-Client vollständig neu starten, wenn das Addon neu hinzugefügt wurde. In der Addon-Liste **Guild Copilot** aktivieren.
+4. Im Spiel mit **`/gcp`** öffnen. **`/gcp client`** zeigt Client, Addon-Version, Datenbank und Sync-Kanal; **`/gcp ver`** zeigt die Versionen in der Gilde/Gruppe.
 
 Quellcode, Tests und Entwicklungswerkzeuge gehören nicht in den AddOns-Ordner. Der TBC-Installer ist für diese Fassung nicht geeignet.
 
@@ -18,7 +18,7 @@ Quellcode, Tests und Entwicklungswerkzeuge gehören nicht in den AddOns-Ordner. 
 | Repository | `stryker-max/GuildCopilot` | `stryker-max/GuildCopilot-Forever` |
 | Addon-Ordner | `GuildCopilot` | `GuildCopilotForever` |
 | Spielordner | `_anniversary_` | `_classic_beta_` |
-| Befehl | `/gcp` | `/gcpf` |
+| Befehl | `/gcp` | `/gcp` |
 | Globale Addon-Tabelle | `GuildCopilot` | `GuildCopilotForever` |
 | SavedVariables | `GuildCopilotDB` | `GuildCopilotForeverDB` |
 | Sync-Präfix | `GuildCopilot` | `GCPForever` |
@@ -67,4 +67,4 @@ Optional dieselben Lua-Tests unter echtem Lua 5.1:
 GCP_LUA51=lua5.1 npm run test:lua
 ```
 
-Ausgabe: `build/GuildCopilotForever-0.1.0-beta.2.zip` und `build/SHA256.json`. Lizenz: MIT, ursprüngliche Urheberschaft des Guild Copilot Teams bleibt erhalten.
+Ausgabe: `build/GuildCopilotForever-0.1.0-beta.3.zip` und `build/SHA256.json`. Lizenz: MIT, ursprüngliche Urheberschaft des Guild Copilot Teams bleibt erhalten.

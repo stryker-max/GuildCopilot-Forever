@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.1.0-beta.3 – 21.09.2026
+
+- Den bestehenden Produktnamen **Guild Copilot** in Addon-Liste, Fenster, Einstellungen, Chat, Hilfetexten und Übersetzungen wiederhergestellt.
+- Der Hauptbefehl bleibt **`/gcp`**, der ausgeschriebene Alias **`/guildcopilot`**. Dokumentation und bestehende Prüfungen entsprechend korrigiert.
+- Forever-Repository, interner Namensraum, SavedVariables und Installationsziel bleiben technisch getrennt; der sichtbare Produktname hängt nicht vom Repository-Namen ab.
+
 ## 0.1.0-beta.2 – 21.09.2026
 
 - Forever-Talente über öffentliche `C_Traits`-Talentgruppen und Punktekosten auslesen, nach Gruppen-ID zuordnen und nach Client-Reihenfolge sortieren. Eigene und Inspect-Daten funktionieren auch mit wenigen Punkten; Gleichstand, geheime Werte und unbestätigte Änderungen werden nicht als eindeutige Spezialisierung veröffentlicht.
