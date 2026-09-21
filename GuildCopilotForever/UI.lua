@@ -8796,7 +8796,7 @@ function GC.UI:BuildInboxPage()
             return
         end
 
-        GC.Sync:QueueGuildProfile()
+        GC.Sync:QueueGuildProfile(true)
         GC:FireCallback("GUILD_PROFILE_UPDATED")
         page.templateStatus:SetText(GC.L("Vorlagen gespeichert und für die Gilde synchronisiert."))
         SetTextColor(page.templateStatus, THEME.success)
@@ -9313,7 +9313,8 @@ function GC.UI:BuildGuildPage()
         end
 
         if GC.Sync and GC.Sync.QueueGuildProfile then
-            GC.Sync:QueueGuildProfile()
+            -- Auch das Ausschalten einmal an die Gilde weitergeben.
+            GC.Sync:QueueGuildProfile(true)
         end
         GC:FireCallback("GUILD_PROFILE_UPDATED")
         page.saveResult:SetText(GC.L("Gespeichert und zur Gildensynchronisierung vorgemerkt."))

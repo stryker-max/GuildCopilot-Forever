@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.1.0-beta.8 – 21.09.2026
+
+- Deaktivierte Gildenprofile werden beim Start nicht mehr automatisch gesendet. Bewusst gespeicherte Änderungen einschließlich des Ausschaltens und gemeinsamer Rechte werden weiterhin abgeglichen; ausstehende Abgleiche erzeugen bei deaktiviertem Profil keine rote Profil-Fehlermeldung.
+- Der getaktete Gildenprofilversand wartet bei Client-Sendesperren ohne Fehlversuche oder Paketverlust. Auch die Fortschrittsanzeige behandelt längere Wartezeiten als Pause statt als Verlust.
+- Gleichzeitige identische Profilübertragungen werden zusammengefasst; neuere Änderungen ersetzen wartende ältere Übertragungen. Ohne Gilde bzw. nach Gildenwechsel wird sauber abgebrochen. Echte Fehler eines aktiven Profils bleiben sichtbar.
+- Regressionstests für lange Sperren, Fortsetzen, Ausschalten, Doppelsendungen, überholte Inhalte, Fehlerstatus und Gildenaustritt.
+
 ## 0.1.0-beta.7 – 21.09.2026
 
 - Gildenprofil optional: Hauptschalter und einzelne Schalter für Kurzbeschreibung, Raidzeiten, Progress, Lootsystem, Discord und Kontaktperson. Änderungen werden mit „Speichern & weiter“ übernommen; deaktivierte Werte bleiben gespeichert und lassen sich wieder einschalten.

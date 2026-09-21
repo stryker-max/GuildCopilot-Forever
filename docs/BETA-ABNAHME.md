@@ -2,7 +2,7 @@
 
 Ziel: WoW Forever Beta 1.60.1.69913. Automatisierte Tests laufen außerhalb des Spiels und bestätigen keine Server- oder Mehrspielerfunktion.
 
-1. WoW nach der Erstinstallation vollständig neu starten. In der Addon-Liste steht **Guild Copilot 0.1.0-beta.7**.
+1. WoW nach der Erstinstallation vollständig neu starten. In der Addon-Liste steht **Guild Copilot 0.1.0-beta.8**.
 2. `/gcp client`: Interface 16001, Datenbank `GuildCopilotForeverDB`, Präfix `GCPForever`. `/gcp` öffnet das Hauptfenster; alle Seiten durchsehen.
    Minimap-Button am Rand prüfen: Minimap vergrößern/verkleinern und verschieben, UI-Skalierung ändern, Button rundherum sowie weit vom Ring weg ziehen. Normales Ziehen muss am Rand bleiben; Umschalt + Ziehen muss frei platzieren. Normales Ziehen oder „Symbol zurück an die Minimap“ heftet wieder an. Beide Positionierungsmodi nach `/reload` sowie Ausblenden/Wiedereinblenden prüfen.
 3. Profil bestätigen, Fenster verschieben und eine Einstellung ändern. `/reload`, Ab-/Anmelden und vollständigen Client-Neustart prüfen. Bleiben die Werte erhalten? Falls nicht, zuerst den SavedVariables-Zustand des Beta-Clients prüfen; keine WTF-Dateien löschen.
@@ -20,5 +20,7 @@ Ziel: WoW Forever Beta 1.60.1.69913. Automatisierte Tests laufen außerhalb des 
 15. Postfach zwischen zwei Gildenmitgliedern synchronisieren: ursprüngliche Bewerbung und Aktivitätszeitpunkt abgleichen, private Folgetexte dürfen nicht übertragen werden. Gelöschte/ignorierte Bewerber dürfen durch erneuten Sync nicht wiederkehren. Nach `/reload` und Neustart müssen die verbleibenden Einträge erhalten bleiben.
 
 16. Gildenprofil: Raidzeiten und Lootsystem befüllen, ausschalten und speichern. Werte müssen grau sichtbar bleiben, in neuer Werbung/Info-Antwort aber entfallen. Ausgeschaltete leere Felder dürfen nicht als fehlend zählen. Hauptschalter aus/ein, `/reload`, Wiedereinschalten einzelner Felder und unveränderte gespeicherte Werte prüfen. Ohne Bearbeitungsrecht dürfen die Schalter nicht gespeichert werden. Mit zweitem beta.7-Client Auswahl und Werte abgleichen; eine alte Werbebestätigung muss nach Profiländerungen verworfen sein. Eigene Vorlagen mit mehreren Sätzen prüfen: Sätze mit deaktivierten Platzhaltern entfallen vollständig.
+
+17. Deaktiviertes Gildenprofil nach `/reload` und Gruppenbeitritt prüfen: keine automatischen Profil-Startsendungen und keine rote Profil-Sendewarnung. Während einer Client-Sperre speichern: Fortschritt pausiert, nach Freigabe wird die Änderung übertragen. Wiederholtes Speichern darf keine parallelen Übertragungen alter Inhalte erzeugen.
 
 Bei Fehlern: erste vollständige Lua-Fehlermeldung, auslösende Aktion und Ausgabe von `/gcp client` festhalten. Die ersten Schritte ohne zusätzliche Addons gegenprüfen, falls ein Addon-Konflikt vermutet wird.

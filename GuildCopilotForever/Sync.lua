@@ -537,6 +537,7 @@ end
 -- unvollstaendig. Nur ein echter Erfolg zaehlt als gesendet; alles andere
 -- laesst die Warteschlangen mit ihrem Backoff erneut anlaufen.
 local function AddonSendSucceeded(result)
+    if GC.Client.IsSecret(result) then return false end
     if result == nil or result == true then
         return true
     end
@@ -1054,7 +1055,8 @@ function GC.Sync:GetSyncStatus()
 
     -- Im Kampf steht die Warteschlange absichtlich. Das ist keine Stoerung und
     -- gehoert auch nicht als solche angezeigt.
-    status.paused = #self.bulkQueue > 0 and (InCombat() or OutgoingRestricted()) or false
+    status.paused = (#self.bulkQueue > 0 and (InCombat() or OutgoingRestricted()))
+        or (self.guildProfileTransfer ~= nil and OutgoingRestricted()) or false
 
     -- Was nachweislich noch bei uns oder bei ChatThrottleLib liegt, ist nicht
     -- verloren. Beides zusammen: ein uebergebenes Paket (bulkInFlight) und
@@ -1064,7 +1066,7 @@ function GC.Sync:GetSyncStatus()
     -- liegen die pausierten Pakete weiterhin vollstaendig in bulkQueue - die
     -- Sperre hat sie trotzdem als verloren gebucht und den Zaehler abgeraeumt,
     -- obwohl sie nach dem Kampf ordnungsgemaess rausgingen.
-    local held = self.bulkInFlight ~= nil or #self.bulkQueue > 0
+    local held = self.bulkInFlight ~= nil or #self.bulkQueue > 0 or self.guildProfileTransfer ~= nil
 
     -- Der Sendezaehler ist der einzige Wert, der lecken kann. Kommt er zwei
     -- Minuten lang nicht voran UND ist nichts mehr in der Leitung, gilt das
@@ -1784,16 +1786,24 @@ function GC.Sync:SendGuildProfile(force)
     self.guildProfileSendPending = false
     force = force == true or self.guildProfileForceSend
     self.guildProfileForceSend = false
+    if not IsInGuild or not IsInGuild() then return false end
+    if not force and GC.DB:GetGuild().profile.enabled == false then return false end
     if not force and not GC.Roster:CanEditGuildProfile() then
         return false
     end
+    local payload = self:BuildGuildProfilePayload()
+    local previous = self.guildProfileTransfer
+    if previous and previous.guildKey == guildKey and previous.payload == payload then return true end
+    if previous then previous.cancel() end
     local messages, bytes, maximum = self:BuildGuildProfileMessages()
     if #messages == 0 then
         -- Lieber laut scheitern als leise: Vorher sah der Offizier "Gespeichert",
         -- waehrend bei allen anderen nichts ankam.
-        GC:Print("|cffff5555Das Gildenprofil ist zu gross zum Synchronisieren|r ("
-            .. bytes .. " von höchstens " .. maximum .. " Zeichen). "
-            .. "Bitte Texte, Antwortvorlagen oder Verzauberungsregeln kürzen.")
+        if GC.DB:GetGuild().profile.enabled ~= false then
+            GC:Print("|cffff5555Das Gildenprofil ist zu gross zum Synchronisieren|r ("
+                .. bytes .. " von höchstens " .. maximum .. " Zeichen). "
+                .. "Bitte Texte, Antwortvorlagen oder Verzauberungsregeln kürzen.")
+        end
         GC:FireCallback("GUILD_PROFILE_TOO_LARGE", bytes, maximum)
         return false
     end
@@ -1803,15 +1813,25 @@ function GC.Sync:SendGuildProfile(force)
     -- Fortschrittsbalken ihn trotzdem kennt, wird er als offene Arbeit gebucht
     -- und auf jedem Ausgang wieder abgemeldet.
     local outstanding = #messages
+    local transfer = { guildKey = guildKey, payload = payload }
+    self.guildProfileTransfer = transfer
     self:NoteSerialPending(outstanding)
     local function ReleaseSerial(count)
         count = math.min(outstanding, math.max(0, count or outstanding))
         outstanding = outstanding - count
         GC.Sync:NoteSerialPending(-count)
+        if outstanding == 0 and self.guildProfileTransfer == transfer then self.guildProfileTransfer = nil end
     end
+    transfer.cancel = function() ReleaseSerial() end
     local function SendNext()
-        if GC:GetGuildKey() ~= guildKey then
+        if self.guildProfileTransfer ~= transfer then return end
+        if GC:GetGuildKey() ~= guildKey or not IsInGuild or not IsInGuild() then
             ReleaseSerial()
+            return
+        end
+        -- Eine Client-Sperre ist Wartezeit, kein fehlgeschlagenes Paket.
+        if OutgoingRestricted() then
+            C_Timer.After(1.25, SendNext)
             return
         end
         local message = messages[index]
@@ -1828,9 +1848,11 @@ function GC.Sync:SendGuildProfile(force)
             retries = retries + 1
             if retries >= 5 then
                 -- Auch der abgebrochene Versand war bisher unsichtbar.
-                GC:Print("|cffff5555Das Gildenprofil konnte nicht vollständig gesendet werden|r ("
-                    .. (index - 1) .. " von " .. #messages .. " Teilen). "
-                    .. "Bitte im Gildenprofil erneut speichern.")
+                if GC.DB:GetGuild().profile.enabled ~= false then
+                    GC:Print("|cffff5555Das Gildenprofil konnte nicht vollständig gesendet werden|r ("
+                        .. (index - 1) .. " von " .. #messages .. " Teilen). "
+                        .. "Bitte im Gildenprofil erneut speichern.")
+                end
                 self.progressFailed = (tonumber(self.progressFailed) or 0) + outstanding
                 ReleaseSerial()
                 return
@@ -1847,6 +1869,7 @@ function GC.Sync:SendGuildProfile(force)
 end
 
 function GC.Sync:QueueGuildProfile(force)
+    if not force and GC.DB:GetGuild().profile.enabled == false then return false end
     self.guildProfileForceSend = self.guildProfileForceSend or force == true
     if self.guildProfileSendPending then
         return
@@ -1855,6 +1878,7 @@ function GC.Sync:QueueGuildProfile(force)
     C_Timer.After(0.6, function()
         self:SendGuildProfile()
     end)
+    return true
 end
 
 function GC.Sync:ReceiveGuildProfileChunk(message, sender, distribution)

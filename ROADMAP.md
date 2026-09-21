@@ -1,5 +1,9 @@
 # Guild Copilot – Entwicklung
 
+## 0.1.0-beta.8: Gildenabgleich bei deaktiviertem Profil
+
+Der Profil-Hauptschalter unterbindet nun auch den automatischen Start-Broadcast. Gespeicherte Änderungen und Antworten auf Gildenanfragen transportieren weiterhin die gemeinsame Auswahl und Rechte. Der Sender pausiert bei Client-Sperren, fasst doppelte Übertragungen zusammen und ersetzt überholte Inhalte. Im Spiel deaktiviertes Profil nach `/reload` sowie einen gespeicherten Wechsel während einer Sendesperre prüfen; der Abgleich muss ohne rote Profilwarnungen fortsetzen.
+
 ## 0.1.0-beta.7: optionales Gildenprofil
 
 Das gesamte Gildenprofil und seine sechs Textangaben lassen sich aktivieren/deaktivieren. Ausgeschaltete Werte bleiben gespeichert, werden aber nicht in neu erzeugte Texte oder neue Loot-Vorbelegungen übernommen. Die Gilde synchronisiert die Auswahl mit beta.7; ältere Clients verstehen die neuen Schalter noch nicht. Im Spiel Speichern, Neuladen, Wiederaktivieren und Abgleich mit einem zweiten beta.7-Client prüfen.

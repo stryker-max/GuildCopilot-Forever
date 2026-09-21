@@ -2,7 +2,7 @@
 ## Title: Guild Copilot
 ## Notes: Gildenassistent für Rekrutierung, Roster, Berufe und Gruppensuche in WoW Forever Beta.
 ## Author: Guild Copilot Team
-## Version: 0.1.0-beta.7
+## Version: 0.1.0-beta.8
 ## SavedVariables: GuildCopilotForeverDB
 ## IconTexture: Interface\AddOns\GuildCopilotForever\Media\GuildCopilotForeverLogo
 
