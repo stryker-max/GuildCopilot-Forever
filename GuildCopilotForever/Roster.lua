@@ -169,11 +169,8 @@ function GC.Roster:ScanNow()
     GC:FireCallback("ROSTER_UPDATED")
 end
 
--- Wer zaehlt als aktiver Raider? Diese Frage beantwortete bisher nur die
--- Raiderliste fuer sich selbst; die Rekrutierungsabdeckung zaehlte dagegen
--- JEDES Gildenmitglied mit - auch den Stufe-12-Twink und einen Rang, der
--- ausdruecklich ausgeschlossen war. Eine gesuchte Spec galt dadurch als
--- abgedeckt, obwohl sie niemand raiden konnte. Beide Seiten fragen jetzt hier.
+-- Uebersicht und Rekrutierungsabdeckung teilen die Rangauswahl. Nur die
+-- Abdeckung setzt weiterhin die Zielstufe voraus; die Uebersicht zeigt alle.
 -- Die Maßstaebe einmal einsammeln. GC.DB:GetGuild() faehrt bei JEDEM Aufruf
 -- rekursiv den kompletten Vorgabenbaum ab (MergeDefaults) - in einer Schleife
 -- ueber alle Gildenmitglieder ist genau das der teure Teil. Die Pruefungen
@@ -188,11 +185,8 @@ function GC.Roster:GetRaiderRules()
     }
 end
 
-function GC.Roster:CountsAsActiveRaider(member, rules)
+function GC.Roster:IsRaiderRankSelected(member, rules)
     if not member then
-        return false
-    end
-    if (tonumber(member.level) or 0) < GC.Client.maxLevel then
         return false
     end
     rules = rules or self:GetRaiderRules()
@@ -201,6 +195,11 @@ function GC.Roster:CountsAsActiveRaider(member, rules)
         return false
     end
     return true
+end
+
+function GC.Roster:CountsAsActiveRaider(member, rules)
+    return member ~= nil and (tonumber(member.level) or 0) >= GC.Client.maxLevel
+        and self:IsRaiderRankSelected(member, rules)
 end
 
 -- Fuer die Abdeckung reicht "darf raiden" nicht: Wer seit Monaten nicht mehr
@@ -223,7 +222,8 @@ function GC.Roster:GetActiveRaiders(limit)
     local raiders = {}
     local rules = self:GetRaiderRules()
     for _, member in ipairs(self.members) do
-        if self:CountsAsActiveRaider(member, rules) then
+        -- Die Uebersicht zeigt alle Stufen der ausgewaehlten Raenge.
+        if self:IsRaiderRankSelected(member, rules) then
             raiders[#raiders + 1] = member
         end
     end

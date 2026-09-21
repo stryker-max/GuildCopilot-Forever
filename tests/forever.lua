@@ -167,6 +167,22 @@ check(not addon.DB:GetSettings().gearAudit.acceptUnratedEnchants, "Unverified en
 check(not addon.RaidMonitor:BeginSession() and not addon.RaidMonitor:StartSession("s", "Tester", 100, "Zone"), "Unavailable combat analysis started")
 check(addon.RaidMonitor.session == nil, "Fake raid session exists")
 check(addon.Roster:CountsAsActiveRaider({level=60}) and not addon.Roster:CountsAsActiveRaider({level=59}), "Forever level cap wrong")
+do
+    local previousMembers = addon.Roster.members
+    local previousRules = addon.Roster.GetRaiderRules
+    addon.Roster.GetRaiderRules = function()
+        return { rankFilterConfigured = true, activeRaiderRanks = { ["1"] = true } }
+    end
+    addon.Roster.members = {
+        { name = "Low", level = 10, rankIndex = 1, online = true },
+        { name = "High", level = 60, rankIndex = 1, online = false },
+        { name = "Excluded", level = 60, rankIndex = 2, online = true },
+    }
+    local visible = addon.Roster:GetActiveRaiders(50)
+    check(#visible == 2 and visible[1].name == "Low" and visible[2].name == "High",
+        "Overview filtered lower levels or lost rank filter/activity ordering")
+    addon.Roster.members, addon.Roster.GetRaiderRules = previousMembers, previousRules
+end
 check(#addon.RaidInstances == 0 and addon.RaidSearch:NewPlan().zone == "", "TBC raid preset in Forever")
 check(addon.API.GetSpellInfo(2963) == "Spell 2963", "SpellInfo table not adapted")
 check(addon.API.GetItemInfo(14048) == "Runenstoffballen", "Namespaced item API not used")

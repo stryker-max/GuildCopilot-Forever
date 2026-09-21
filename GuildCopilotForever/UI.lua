@@ -2018,7 +2018,7 @@ function GC.UI:BuildDashboardPage()
     -- deshalb jetzt hervorgehoben vorn, und dieselbe Aussage wiederholt sich
     -- in der Spaltenueberschrift "ZULETZT ONLINE".
     CreatePageTitle(page, "Gildenübersicht",
-        (GC.L("|cff2ec7dbNach zuletzt online sortiert|r – bis zu {n} Level-70-Spieler aus den gewählten Raider-Rängen, mit Rang, Raidprofil und Berufen."):gsub("70", tostring(GC.Client.maxLevel))
+        (GC.L("|cff2ec7dbNach zuletzt online sortiert|r – bis zu {n} Spieler aus den gewählten Raider-Rängen, mit Rang, Raidprofil und Berufen.")
             :gsub("{n}", tostring(GC.Constants.ACTIVE_RAIDER_LIMIT))))
 
     page.metricCards = {}
@@ -2085,7 +2085,7 @@ function GC.UI:BuildDashboardPage()
         end
     end)
 
-    local rosterCard = CreateCard(page, "Aktive Raider  •  Level " .. GC.Client.maxLevel)
+    local rosterCard = CreateCard(page, "Aktive Raider")
     rosterCard:SetSize(776, 408)
     rosterCard:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -158)
     page.rankFilterButton = CreateButton(rosterCard, "Ränge: alle", 154, 28, function()
@@ -2353,7 +2353,7 @@ function GC.UI:BuildSettingsPage()
     page.activeRankCard, page.activeRankToggles = BuildRankCard(
         "Aktive Raider",
         0, 1604,
-        GC.L("Diese Ränge erscheinen als Level-70-Raider in der Übersicht."):gsub("70", tostring(GC.Client.maxLevel)),
+        GC.L("Diese Ränge erscheinen unabhängig von der Stufe in der Übersicht."),
         function(rankIndex, checked)
             GC.Roster:SetRankActive(rankIndex, checked)
         end
@@ -14302,7 +14302,7 @@ SlashCmdList.GUILDCOPILOTFOREVER = function(input)
         GC:Print("Charakter: " .. GC:GetPlayerFullName())
         local spec, signature = GC.Profile:DetectTalentSpec()
         GC:Print("Talente: " .. (signature or "derzeit nicht lesbar") .. " | Zuordnung: " .. (spec or "nicht eindeutig"))
-        GC:Print("Die Raiderliste beginnt bei Stufe " .. GC.Client.maxLevel .. "; Beta-Levelgrenzen können darunter liegen.")
+        GC:Print("Die Übersicht zeigt alle Stufen aus den ausgewählten Raider-Rängen.")
         if not GC.Client.combatAnalysis then GC:Print(GC.Client.combatAnalysisReason) end
         return
     end

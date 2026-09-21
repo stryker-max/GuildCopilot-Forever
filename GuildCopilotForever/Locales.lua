@@ -130,8 +130,9 @@ local english = {
     -- === Teilschritt 1: Untertitel der Seiten ==============================
     ["Raidprofil, Berufe und Abmeldung an einem Ort – diese Angaben werden mit Guild-Copilot-Nutzern in deiner Gilde synchronisiert."]
         = "Raid profile, professions and absences in one place – these details are synchronized with Guild Copilot users in your guild.",
-    ["|cff2ec7dbNach zuletzt online sortiert|r – bis zu {n} Level-70-Spieler aus den gewählten Raider-Rängen, mit Rang, Raidprofil und Berufen."]
-        = "|cff2ec7dbSorted by last seen online|r – up to {n} level 70 players from the selected raider ranks, with rank, raid profile and professions.",
+    ["|cff2ec7dbNach zuletzt online sortiert|r – bis zu {n} Spieler aus den gewählten Raider-Rängen, mit Rang, Raidprofil und Berufen."]
+        = "|cff2ec7dbSorted by last seen online|r – up to {n} players from the selected raider ranks, with rank, raid profile and professions.",
+    ["Diese Ränge erscheinen unabhängig von der Stufe in der Übersicht."] = "These ranks appear in the overview regardless of level.",
     ["ZULETZT ONLINE"] = "LAST ONLINE",
     -- Die Mitgliederpflege ist rein informativ; die Beschriftungen des
     -- Aufklappmenues und des Ausschlussknopfes sind mit ihnen entfallen.

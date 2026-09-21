@@ -1,10 +1,10 @@
-# Guild Copilot 0.1.0-beta.5
+# Guild Copilot 0.1.0-beta.6
 
 Eigenständige Portierung von [Guild Copilot für TBC Anniversary](https://github.com/stryker-max/GuildCopilot) für **World of Warcraft: Forever Beta 1.60.1.69913**, Interface **16001**.
 
 ## Installation
 
-1. Das Paket `GuildCopilotForever-0.1.0-beta.5.zip` entpacken.
+1. Das Paket `GuildCopilotForever-0.1.0-beta.6.zip` entpacken.
 2. Den darin enthaltenen Ordner `GuildCopilotForever` nach `World of Warcraft/_classic_beta_/Interface/AddOns/` kopieren.
 3. Den WoW-Client vollständig neu starten, wenn das Addon neu hinzugefügt wurde. In der Addon-Liste **Guild Copilot** aktivieren.
 4. Im Spiel mit **`/gcp`** öffnen. **`/gcp client`** zeigt Client, Addon-Version, Datenbank und Sync-Kanal; **`/gcp ver`** zeigt die Versionen in der Gilde/Gruppe.
@@ -36,7 +36,7 @@ Keine automatische Übernahme von TBC-Daten. Die Forever-Fassung enthält weder 
 - Vollständige zweiteilige Forever-Namen für Profile, Rechte, Hersteller und Aufträge; das Trennzeichen liefert der Client.
 - Talentgruppen und ausgegebene Punkte aus der Forever-Talentoberfläche, einschließlich niedriger Level und verfügbarer Inspect-Daten.
 
-Forever verwendet regionale Charakternamen und Regelsets statt der bisherigen Realm-Auswahl. Die angekündigte Zielstufe ist 60; die erste Beta-Testphase beginnt mit Stufe 20. Die Raiderliste filtert weiterhin auf Stufe 60 und kann deshalb während der Beta leer bleiben. Quellen und API-Abgleich stehen in [docs/FOREVER-GRUNDLAGE.md](docs/FOREVER-GRUNDLAGE.md).
+Forever verwendet regionale Charakternamen und Regelsets statt der bisherigen Realm-Auswahl. Die angekündigte Zielstufe ist 60; die erste Beta-Testphase beginnt mit Stufe 20. Die Gildenübersicht zeigt Mitglieder aller Stufen aus den ausgewählten Raider-Rängen. Quellen und API-Abgleich stehen in [docs/FOREVER-GRUNDLAGE.md](docs/FOREVER-GRUNDLAGE.md).
 
 ## Bewusste Einschränkungen
 
@@ -70,4 +70,4 @@ Optional dieselben Lua-Tests unter echtem Lua 5.1:
 GCP_LUA51=lua5.1 npm run test:lua
 ```
 
-Ausgabe: `build/GuildCopilotForever-0.1.0-beta.5.zip` und `build/SHA256.json`. Lizenz: MIT, ursprüngliche Urheberschaft des Guild Copilot Teams bleibt erhalten.
+Ausgabe: `build/GuildCopilotForever-0.1.0-beta.6.zip` und `build/SHA256.json`. Lizenz: MIT, ursprüngliche Urheberschaft des Guild Copilot Teams bleibt erhalten.

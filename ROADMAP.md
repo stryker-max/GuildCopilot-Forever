@@ -1,5 +1,9 @@
 # Guild Copilot – Entwicklung
 
+## 0.1.0-beta.6: Übersicht für alle Stufen
+
+Die Übersicht zeigt ausgewählte Raider-Ränge ohne Levelbegrenzung. Rangfilter, Sortierung und Listenlimit bleiben erhalten; die Prüfung der Rekrutierungsabdeckung ist davon getrennt. Frühere Hinweise zur leeren Level-60-Übersicht gelten ab beta.6 nicht mehr.
+
 ## 0.1.0-beta.5: Minimap-Button am Rand
 
 Der angeheftete Button folgt dem aktuellen Minimap-Rand. Normales Ziehen heftet an und verschiebt entlang des Rings; Umschalt + Ziehen platziert frei. Vergrößerte Karten, Größenänderungen und verschiedene UI-Skalierungen sind berücksichtigt; bestehende freie Positionen bleiben erhalten. Im Spiel nach `/reload` beide Modi und das erneute Anheften bei der verwendeten Minimap-Größe prüfen.

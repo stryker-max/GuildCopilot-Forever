@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.1.0-beta.6 – 21.09.2026
+
+- Levelbegrenzung und Levelangabe aus der Gildenübersicht entfernt. Mitglieder aller Stufen erscheinen gemäß der bestehenden Rangauswahl und Sortierung nach letzter Aktivität. Hilfetexte, Diagnose und Übersetzungen angepasst. Die separate Rekrutierungsabdeckung behält ihre bisherigen Regeln.
+
 ## 0.1.0-beta.5 – 21.09.2026
 
 - Angehefteter Minimap-Button folgt dem Rand: Radius aus aktueller Breite/Höhe statt festem Wert 78; Größenänderungen werden sofort übernommen. Verschieben und Skalieren der Minimap nehmen den angehefteten Button mit.
