@@ -2,6 +2,8 @@
 
 ## 0.1.0-beta.4: Postfach und Raidvorbereitung
 
+Die Paketprüfung kontrolliert nun sämtliche ZIP-Zeitstempel. Implizite Ordner mit wechselnder Uhrzeit werden nicht erzeugt, damit aufeinanderfolgende Builds zuverlässig bytegleich bleiben.
+
 Das Postfach verarbeitet lesbare Whisper auch mit geschützten Begleitdaten und führt bekannte Unterhaltungen unabhängig vom Suchfenster fort. Antwortentwürfe, Paketgrenzen, Empfangsreihenfolge, Löschmarkierungen und aktive Bewerber bei voller Inbox sind abgesichert. Der Erkennungsstatus erklärt leere Suchwortlisten.
 
 Die Raidseite bietet eine gespeicherte Momentaufnahme über `/gcp raidcheck`: lesbare Gruppen-Buffs und eigene Verbrauchsvorräte vor dem Pull. Sie bewertet keine unbestätigten Forever-Pflichtbuffs und zählt keinen tatsächlichen Verbrauch. Für eine spätere Auswertung benutzter Verbrauchsmaterialien fehlen eine reale Forever-Logprobe und bestätigte Spell-/Item-Zuordnungen. Die öffentliche Schadensanzeige liefert hierfür keine Verbrauchsmetrik. [Quellen und Grenzen](docs/RAID-VORBEREITUNG.md).

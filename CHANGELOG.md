@@ -2,6 +2,7 @@
 
 ## 0.1.0-beta.4 – 21.09.2026
 
+- ZIP-Paketbau stabilisiert: keine automatisch angelegten Ordner mit aktuellem Zeitstempel. Alle Archiveinträge werden auf feste Zeitstempel geprüft; zuvor konnte die Reproduzierbarkeitsprüfung abhängig vom Build-Zeitpunkt fehlschlagen.
 - Bewerberpostfach: Lesbare Nachrichten gehen bei geschützten Begleitdaten nicht mehr verloren. Bestehende Unterhaltungen bleiben nach Ende der Suchstunde aktiv und haben Vorrang vor einer parallelen Raidsuche. Fehlende Erkennungswörter werden sichtbar erklärt.
 - Antwortentwürfe bleiben bei Chat-Sperre, Versandfehler oder Überschreitung der 255-Byte-Grenze erhalten. Antwort und Einladung melden keine abgewiesenen API-Aufrufe als Erfolg; ein erfolgreicher Aufruf bestätigt nur die Übergabe an den Client.
 - Postfach-Sync: Mehrteilige Nachrichten, UTF-8, Empfang außerhalb der Reihenfolge, Dubletten, Löschmarkierungen und ungültige Zeitstempel abgesichert. Private Folgetexte bleiben lokal; der Aktivitätszeitpunkt wird gedrosselt mitgeteilt. Bei 100 Einträgen bleiben die zuletzt aktiven Bewerber erhalten. Unbestätigte Forever-Profillinks werden nicht erzeugt.

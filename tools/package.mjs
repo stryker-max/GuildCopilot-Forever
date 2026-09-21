@@ -30,9 +30,10 @@ export async function packageAddon() {
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, bytes);
     manifest[file] = createHash('sha256').update(bytes).digest('hex');
-    zip.file(addonName + '/' + file, bytes, { date: new Date('2020-01-01T00:00:00Z') });
+    // Implicit folder entries otherwise receive the current timestamp.
+    zip.file(addonName + '/' + file, bytes, { date: new Date('2020-01-01T00:00:00Z'), createFolders: false });
   }
-  zip.file(addonName + '/LICENSE', readFileSync(join(root, 'LICENSE')), { date: new Date('2020-01-01T00:00:00Z') });
+  zip.file(addonName + '/LICENSE', readFileSync(join(root, 'LICENSE')), { date: new Date('2020-01-01T00:00:00Z'), createFolders: false });
   const archive = join(build, `${addonName}-${version}.zip`);
   const bytes = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
   writeFileSync(archive, bytes);
