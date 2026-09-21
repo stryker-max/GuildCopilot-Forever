@@ -7,7 +7,7 @@ GC.callbacks = {}
 GC.initialized = false
 
 function GC:Print(message)
-    local prefix = "|cff4ec9ffGuild Copilot Forever:|r "
+    local prefix = "|cff4ec9ffGuild Copilot:|r "
     if DEFAULT_CHAT_FRAME then
         DEFAULT_CHAT_FRAME:AddMessage(prefix .. tostring(message))
     end
@@ -40,7 +40,7 @@ end
 --
 -- Ob ein Ruckler vom Addon kommt, laesst sich nicht aus dem Code lesen, nur
 -- messen. Diese Messung ist standardmaessig aus und kostet dann genau einen
--- Tabellenzugriff je Aufruf; eingeschaltet wird sie mit "/gcpf debug".
+-- Tabellenzugriff je Aufruf; eingeschaltet wird sie mit "/gcp debug".
 --
 -- Gemessen wird mit debugprofilestop() statt GetTimePreciseSec(): Ersteres
 -- gibt es in jeder Spielfassung, Letzteres nicht.
@@ -84,7 +84,7 @@ function GC.Perf:Measure(label, fn, ...)
     --
     -- Hier stand "fn(...)" ohne return: Ausgeschaltet lieferte die Messung das
     -- Ergebnis der gemessenen Funktion, eingeschaltet nichts. Damit aenderte
-    -- "/gcpf debug" das Programmverhalten statt es nur zu beobachten - eine
+    -- "/gcp debug" das Programmverhalten statt es nur zu beobachten - eine
     -- Messung, die das Gemessene veraendert, ist wertlos, und der naechste
     -- Aufrufer waere darauf hereingefallen. Die Zwischentabelle kostet eine
     -- Belegung je Aufruf; das ist genau dann hinnehmbar, wenn ohnehin gemessen
@@ -146,6 +146,9 @@ end
 
 function GC.Util.NormalizeName(name)
     name = GC.Util.Trim(name):lower()
+    -- Spaces can separate a Forever first name and surname. Removing them
+    -- would merge distinct identities such as "Ana Bel" and "An Abel".
+    if GC.Client.isForever then return (name:gsub("%s+", " ")) end
     return name:gsub("%s+", "")
 end
 
@@ -156,22 +159,31 @@ function GC.Util.PlayerShortName(name)
     return name:match("^([^-]+)") or name
 end
 
--- Forever uses the modern client; realm-qualified characters must not share
--- profile, permission or order keys merely because their short names match.
+-- Forever names are regional first-name/surname identities. Never invent a
+-- surname from GetRealmName or treat a first name as a unique character.
 function GC.Util.PlayerIdentityName(name)
     if not GC.Client.isForever then return GC.Util.PlayerShortName(name) end
-    name = GC.Util.Trim(name)
-    if name == "" or name:find("-", 1, true) then return name end
-    local realm = GetNormalizedRealmName and GetNormalizedRealmName() or GetRealmName and GetRealmName() or ""
-    return realm ~= "" and (name .. "-" .. realm) or name
+    return GC.Util.Trim(name)
+end
+
+function GC.Util.JoinPlayerName(name, surname)
+    if GC.Client.HasSecretArguments(name, surname) then return nil end
+    name, surname = GC.Util.Trim(name), GC.Util.Trim(surname)
+    if name == "" then return nil end
+    if surname == "" then return name end
+    local separator = Constants and Constants.CharacterNameSeparatorConsts
+        and Constants.CharacterNameSeparatorConsts.CHARACTERNAME_SURNAME_SEPARATOR
+    -- Do not guess the wire format if the client has not exposed it yet.
+    if type(separator) ~= "string" or separator == "" then return nil end
+    if name:sub(-(#separator + #surname)) == separator .. surname then return name end
+    return name .. separator .. surname
 end
 
 function GC.Util.UnitIdentityName(unit)
-    if GC.Client.isForever and UnitFullName then
-        local name, realm = UnitFullName(unit)
-        if GC.Client.HasSecretArguments(name, realm) then return nil end
-        if name and realm and realm ~= "" then return name .. "-" .. realm end
-        return GC.Util.PlayerIdentityName(name)
+    if GC.Client.isForever then
+        local reader = UnitNameUnmodified or UnitFullName or UnitName
+        if not reader then return nil end
+        return GC.Util.JoinPlayerName(reader(unit))
     end
     return UnitName and UnitName(unit)
 end
@@ -184,15 +196,7 @@ function GC.Util.EncodeURLPath(value)
     end))
 end
 
--- Der Schluessel, unter dem ein Charakter in allen Tabellen steht.
---
--- Derselbe Charakter erreicht das Addon je nach Quelle mit und ohne
--- Realmanteil: GetPlayerFullName() haengt ihn immer an, UnitName() nie, und
--- der Absender einer Addon-Nachricht mal so, mal so. Wer beides ungeprueft als
--- Schluessel nimmt, fuehrt denselben Spieler doppelt - genau das ist in der
--- Werkstatt passiert, waehrend Raidmonitor und Ausruestungspruefung laengst
--- gekuerzt haben. Der Realm faellt deshalb ueberall weg; in einer TBC-Gilde
--- sind ohnehin alle auf demselben Realm.
+-- Keep the complete client identity in profiles, permissions and orders.
 function GC.Util.PlayerKey(name)
     return GC.Util.NormalizeName(GC.Util.PlayerIdentityName(name))
 end
@@ -541,6 +545,12 @@ function GC:GetPlayerFullName()
         return cached
     end
 
+    if GC.Client.isForever then
+        local identity = GC.Util.UnitIdentityName("player")
+        if identity and identity ~= "" then self.playerFullName = identity end
+        return identity or "Unbekannt"
+    end
+
     -- Hier stand "local name, realm = UnitFullName and UnitFullName(...)".
     -- Lua kuerzt einen and-Ausdruck auf genau einen Wert, realm blieb deshalb
     -- immer leer und wurde jedes Mal ueber den Fallback unten neu geholt.
@@ -629,7 +639,7 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         GC.playerFullName = nil
         GC:RefreshGuildKey(false)
         GC:FireCallback("PLAYER_LOGIN")
-        GC:Print(GC.LFormat("v{v} geladen. Öffnen mit |cffffffff/gcpf|r.",
+        GC:Print(GC.LFormat("v{v} geladen. Öffnen mit |cffffffff/gcp|r.",
             { v = GC.Constants.VERSION }))
     elseif event == "PLAYER_GUILD_UPDATE" then
         -- Ab hier steht der Gildenzustand des Clients fest - auch ein "keine

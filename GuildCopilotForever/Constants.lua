@@ -1,8 +1,8 @@
 local _, GC = ...
 
 GC.Constants = {
-    ADDON_NAME = "Guild Copilot Forever",
-    VERSION = "0.1.0-beta.1",
+    ADDON_NAME = "Guild Copilot",
+    VERSION = "0.1.0-beta.8",
     SCHEMA_VERSION = 7,
     -- Wie eine Zahl der Raidauswertung ZU LESEN ist. Nicht zu verwechseln mit
     -- SCHEMA_VERSION: Die beschreibt das Nachrichtenformat, also ob zwei
@@ -27,6 +27,7 @@ GC.Constants = {
     INTERFACE_VERSION = 20506,
     COMM_PREFIX = "GuildCopilotForever",
     MAX_CHAT_BYTES = 255,
+    MAX_PLAYER_NAME_BYTES = 96,
     -- Das Gildenprofil wandert zerlegt durch den Gildenkanal. Sender und
     -- Empfaenger MUESSEN dieselbe Obergrenze kennen: Bisher schnitt der Sender
     -- unbegrenzt viele Bloecke, waehrend der Empfaenger jede Uebertragung mit
@@ -112,7 +113,6 @@ GC.ProfessionOptions = {
     "Alchimie",
     "Bergbau",
     "Ingenieurskunst",
-    "Juwelenschleifen",
     "Kräuterkunde",
     "Kürschnerei",
     "Lederverarbeitung",

@@ -85,6 +85,14 @@ local function InCombat()
     return type(UnitAffectingCombat) == "function" and UnitAffectingCombat("player") == true
 end
 
+local function OutgoingRestricted()
+    local query = C_ChatInfo and C_ChatInfo.AreOutgoingAddonChatMessagesRestricted
+    if type(query) ~= "function" then return false end
+    local ok, restricted = pcall(query)
+    if not ok or GC.Client.IsSecret(restricted) then return true end
+    return restricted == true
+end
+
 local RELIABLE_WINDOW = 4
 local RELIABLE_RETRY_DELAY = 1.5
 -- Der Whisper-Transfer teilt sich das Kanalbudget mit ChatThrottleLib und dem
@@ -529,6 +537,7 @@ end
 -- unvollstaendig. Nur ein echter Erfolg zaehlt als gesendet; alles andere
 -- laesst die Warteschlangen mit ihrem Backoff erneut anlaufen.
 local function AddonSendSucceeded(result)
+    if GC.Client.IsSecret(result) then return false end
     if result == nil or result == true then
         return true
     end
@@ -540,6 +549,7 @@ end
 
 function GC.Sync:Send(payload, distribution, target)
     distribution = distribution or "GUILD"
+    if OutgoingRestricted() then return false end
     if not payload or #payload > GC.Constants.MAX_CHAT_BYTES then
         return false
     end
@@ -580,7 +590,7 @@ end
 
 -- Grosse Datenmengen landen in einer gemeinsamen, durchsatzorientierten
 -- Warteschlange. Ein vorhandenes ChatThrottleLib kennt auch den Verkehr
--- anderer Addons; der eingebaute Fallback macht Guild Copilot Forever eigenstaendig.
+-- anderer Addons; der eingebaute Fallback macht Guild Copilot eigenstaendig.
 -- "untracked" schaltet die Fortschrittszaehlung fuer dieses Paket ab. Genau ein
 -- Aufrufer braucht das: der bestaetigte Fluestertransfer. Seine Teile werden
 -- ueber die ACK-Liste gezaehlt und wuerden hier ein zweites Mal auftauchen -
@@ -745,6 +755,10 @@ local function PumpBulkOnce(self, elapsed)
         return
     end
     self.bulkCombatAt = nil
+
+    -- Keep the queue intact while the client forbids addon messages. Unlike
+    -- combat, this state need not end with PLAYER_REGEN_ENABLED; keep polling.
+    if #self.bulkQueue > 0 and OutgoingRestricted() then return end
 
     -- Bei ChatThrottleLib liegt immer hoechstens EIN Paket.
     --
@@ -1041,7 +1055,8 @@ function GC.Sync:GetSyncStatus()
 
     -- Im Kampf steht die Warteschlange absichtlich. Das ist keine Stoerung und
     -- gehoert auch nicht als solche angezeigt.
-    status.paused = #self.bulkQueue > 0 and InCombat() or false
+    status.paused = (#self.bulkQueue > 0 and (InCombat() or OutgoingRestricted()))
+        or (self.guildProfileTransfer ~= nil and OutgoingRestricted()) or false
 
     -- Was nachweislich noch bei uns oder bei ChatThrottleLib liegt, ist nicht
     -- verloren. Beides zusammen: ein uebergebenes Paket (bulkInFlight) und
@@ -1051,7 +1066,7 @@ function GC.Sync:GetSyncStatus()
     -- liegen die pausierten Pakete weiterhin vollstaendig in bulkQueue - die
     -- Sperre hat sie trotzdem als verloren gebucht und den Zaehler abgeraeumt,
     -- obwohl sie nach dem Kampf ordnungsgemaess rausgingen.
-    local held = self.bulkInFlight ~= nil or #self.bulkQueue > 0
+    local held = self.bulkInFlight ~= nil or #self.bulkQueue > 0 or self.guildProfileTransfer ~= nil
 
     -- Der Sendezaehler ist der einzige Wert, der lecken kann. Kommt er zwei
     -- Minuten lang nicht voran UND ist nichts mehr in der Leitung, gilt das
@@ -1552,6 +1567,10 @@ function GC.Sync:BuildGuildProfilePayload()
     local memberCare = guildData.memberCare
     local roster = guildData.roster
     local inboxSound = guildData.inboxSound
+    local disabled = {}
+    for _, key in ipairs(GC.DB.GuildProfileFields) do
+        if profile.disabledFields and profile.disabledFields[key] then disabled[#disabled + 1] = key end
+    end
     local fields = {
         "GP",
         tostring(profile.updatedAt or 0),
@@ -1585,6 +1604,8 @@ function GC.Sync:BuildGuildProfilePayload()
         -- bisher nach ihrer eigenen Vorgabe.
         BoolField(inboxSound.ranksConfigured),
         table.concat(SortedEnabledRanks(inboxSound.ranks), ","),
+        BoolField(profile.enabled ~= false),
+        table.concat(disabled, ","),
     }
     for index, value in ipairs(fields) do
         fields[index] = GC.Util.EscapeField(value)
@@ -1765,16 +1786,24 @@ function GC.Sync:SendGuildProfile(force)
     self.guildProfileSendPending = false
     force = force == true or self.guildProfileForceSend
     self.guildProfileForceSend = false
+    if not IsInGuild or not IsInGuild() then return false end
+    if not force and GC.DB:GetGuild().profile.enabled == false then return false end
     if not force and not GC.Roster:CanEditGuildProfile() then
         return false
     end
+    local payload = self:BuildGuildProfilePayload()
+    local previous = self.guildProfileTransfer
+    if previous and previous.guildKey == guildKey and previous.payload == payload then return true end
+    if previous then previous.cancel() end
     local messages, bytes, maximum = self:BuildGuildProfileMessages()
     if #messages == 0 then
         -- Lieber laut scheitern als leise: Vorher sah der Offizier "Gespeichert",
         -- waehrend bei allen anderen nichts ankam.
-        GC:Print("|cffff5555Das Gildenprofil ist zu gross zum Synchronisieren|r ("
-            .. bytes .. " von höchstens " .. maximum .. " Zeichen). "
-            .. "Bitte Texte, Antwortvorlagen oder Verzauberungsregeln kürzen.")
+        if GC.DB:GetGuild().profile.enabled ~= false then
+            GC:Print("|cffff5555Das Gildenprofil ist zu gross zum Synchronisieren|r ("
+                .. bytes .. " von höchstens " .. maximum .. " Zeichen). "
+                .. "Bitte Texte, Antwortvorlagen oder Verzauberungsregeln kürzen.")
+        end
         GC:FireCallback("GUILD_PROFILE_TOO_LARGE", bytes, maximum)
         return false
     end
@@ -1784,15 +1813,25 @@ function GC.Sync:SendGuildProfile(force)
     -- Fortschrittsbalken ihn trotzdem kennt, wird er als offene Arbeit gebucht
     -- und auf jedem Ausgang wieder abgemeldet.
     local outstanding = #messages
+    local transfer = { guildKey = guildKey, payload = payload }
+    self.guildProfileTransfer = transfer
     self:NoteSerialPending(outstanding)
     local function ReleaseSerial(count)
         count = math.min(outstanding, math.max(0, count or outstanding))
         outstanding = outstanding - count
         GC.Sync:NoteSerialPending(-count)
+        if outstanding == 0 and self.guildProfileTransfer == transfer then self.guildProfileTransfer = nil end
     end
+    transfer.cancel = function() ReleaseSerial() end
     local function SendNext()
-        if GC:GetGuildKey() ~= guildKey then
+        if self.guildProfileTransfer ~= transfer then return end
+        if GC:GetGuildKey() ~= guildKey or not IsInGuild or not IsInGuild() then
             ReleaseSerial()
+            return
+        end
+        -- Eine Client-Sperre ist Wartezeit, kein fehlgeschlagenes Paket.
+        if OutgoingRestricted() then
+            C_Timer.After(1.25, SendNext)
             return
         end
         local message = messages[index]
@@ -1809,9 +1848,11 @@ function GC.Sync:SendGuildProfile(force)
             retries = retries + 1
             if retries >= 5 then
                 -- Auch der abgebrochene Versand war bisher unsichtbar.
-                GC:Print("|cffff5555Das Gildenprofil konnte nicht vollständig gesendet werden|r ("
-                    .. (index - 1) .. " von " .. #messages .. " Teilen). "
-                    .. "Bitte im Gildenprofil erneut speichern.")
+                if GC.DB:GetGuild().profile.enabled ~= false then
+                    GC:Print("|cffff5555Das Gildenprofil konnte nicht vollständig gesendet werden|r ("
+                        .. (index - 1) .. " von " .. #messages .. " Teilen). "
+                        .. "Bitte im Gildenprofil erneut speichern.")
+                end
                 self.progressFailed = (tonumber(self.progressFailed) or 0) + outstanding
                 ReleaseSerial()
                 return
@@ -1828,6 +1869,7 @@ function GC.Sync:SendGuildProfile(force)
 end
 
 function GC.Sync:QueueGuildProfile(force)
+    if not force and GC.DB:GetGuild().profile.enabled == false then return false end
     self.guildProfileForceSend = self.guildProfileForceSend or force == true
     if self.guildProfileSendPending then
         return
@@ -1836,6 +1878,7 @@ function GC.Sync:QueueGuildProfile(force)
     C_Timer.After(0.6, function()
         self:SendGuildProfile()
     end)
+    return true
 end
 
 function GC.Sync:ReceiveGuildProfileChunk(message, sender, distribution)
@@ -1898,6 +1941,8 @@ function GC.Sync:ReceiveGuildProfileChunk(message, sender, distribution)
     if fields[1] ~= "GP" then
         return
     end
+    if fields[28] ~= nil and (fields[28] ~= "0" and fields[28] ~= "1"
+        or #(fields[29] or "") > 100) then return end
     local updatedAt = tonumber(fields[2]) or 0
     local guildData = GC.DB:GetGuild()
     local now = GC.Util.Now()
@@ -1932,6 +1977,14 @@ function GC.Sync:ReceiveGuildProfileChunk(message, sender, distribution)
     guildData.profile.discord = fields[7] or ""
     guildData.profile.contact = fields[8] or ""
     guildData.profile.updatedAt = updatedAt
+    if fields[28] ~= nil then
+        guildData.profile.enabled = fields[28] == "1"
+        guildData.profile.disabledFields = {}
+        local disabled = "," .. (fields[29] or "") .. ","
+        for _, key in ipairs(GC.DB.GuildProfileFields) do
+            if disabled:find("," .. key .. ",", 1, true) then guildData.profile.disabledFields[key] = true end
+        end
+    end
     guildData.profilePermissions.configured = fields[9] == "1"
     guildData.profilePermissions.editorRanks = DecodeEnabledRanks(fields[10])
     guildData.replyTemplates.THANKS = fields[11] or ""
@@ -2192,7 +2245,7 @@ function GC.Sync:AnnounceVersion(requestReply, minimumInterval, distribution)
     return true
 end
 
--- Der Versionsprüfer (/gcpf ver) fragt gezielt an: in der Gilde über den
+-- Der Versionsprüfer (/gcp ver) fragt gezielt an: in der Gilde über den
 -- Gildenkanal, in der Gruppe über RAID/PARTY - dort erreichen die Antworten
 -- auch Mitglieder fremder Gilden.
 function GC.Sync:RequestVersionCheck(mode)

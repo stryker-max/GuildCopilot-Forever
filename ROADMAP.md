@@ -1,4 +1,42 @@
-# Guild Copilot Forever – Entwicklung
+# Guild Copilot – Entwicklung
+
+## 0.1.0-beta.8: Gildenabgleich bei deaktiviertem Profil
+
+Der Profil-Hauptschalter unterbindet nun auch den automatischen Start-Broadcast. Gespeicherte Änderungen und Antworten auf Gildenanfragen transportieren weiterhin die gemeinsame Auswahl und Rechte. Der Sender pausiert bei Client-Sperren, fasst doppelte Übertragungen zusammen und ersetzt überholte Inhalte. Im Spiel deaktiviertes Profil nach `/reload` sowie einen gespeicherten Wechsel während einer Sendesperre prüfen; der Abgleich muss ohne rote Profilwarnungen fortsetzen.
+
+## 0.1.0-beta.7: optionales Gildenprofil
+
+Das gesamte Gildenprofil und seine sechs Textangaben lassen sich aktivieren/deaktivieren. Ausgeschaltete Werte bleiben gespeichert, werden aber nicht in neu erzeugte Texte oder neue Loot-Vorbelegungen übernommen. Die Gilde synchronisiert die Auswahl mit beta.7; ältere Clients verstehen die neuen Schalter noch nicht. Im Spiel Speichern, Neuladen, Wiederaktivieren und Abgleich mit einem zweiten beta.7-Client prüfen.
+
+## 0.1.0-beta.6: Übersicht für alle Stufen
+
+Die Übersicht zeigt ausgewählte Raider-Ränge ohne Levelbegrenzung. Rangfilter, Sortierung und Listenlimit bleiben erhalten; die Prüfung der Rekrutierungsabdeckung ist davon getrennt. Frühere Hinweise zur leeren Level-60-Übersicht gelten ab beta.6 nicht mehr.
+
+## 0.1.0-beta.5: Minimap-Button am Rand
+
+Der angeheftete Button folgt dem aktuellen Minimap-Rand. Normales Ziehen heftet an und verschiebt entlang des Rings; Umschalt + Ziehen platziert frei. Vergrößerte Karten, Größenänderungen und verschiedene UI-Skalierungen sind berücksichtigt; bestehende freie Positionen bleiben erhalten. Im Spiel nach `/reload` beide Modi und das erneute Anheften bei der verwendeten Minimap-Größe prüfen.
+
+## 0.1.0-beta.4: Postfach und Raidvorbereitung
+
+Die Paketprüfung kontrolliert nun sämtliche ZIP-Zeitstempel. Implizite Ordner mit wechselnder Uhrzeit werden nicht erzeugt, damit aufeinanderfolgende Builds zuverlässig bytegleich bleiben.
+
+Das Postfach verarbeitet lesbare Whisper auch mit geschützten Begleitdaten und führt bekannte Unterhaltungen unabhängig vom Suchfenster fort. Antwortentwürfe, Paketgrenzen, Empfangsreihenfolge, Löschmarkierungen und aktive Bewerber bei voller Inbox sind abgesichert. Der Erkennungsstatus erklärt leere Suchwortlisten.
+
+Die Raidseite bietet eine gespeicherte Momentaufnahme über `/gcp raidcheck`: lesbare Gruppen-Buffs und eigene Verbrauchsvorräte vor dem Pull. Sie bewertet keine unbestätigten Forever-Pflichtbuffs und zählt keinen tatsächlichen Verbrauch. Für eine spätere Auswertung benutzter Verbrauchsmaterialien fehlen eine reale Forever-Logprobe und bestätigte Spell-/Item-Zuordnungen. Die öffentliche Schadensanzeige liefert hierfür keine Verbrauchsmetrik. [Quellen und Grenzen](docs/RAID-VORBEREITUNG.md).
+
+Noch im Spiel abzunehmen: Postfach zwischen zwei Gildenmitgliedern einschließlich Suchende, fehlgeschlagener Antwort und Neustart; Vorbereitungscheck mit erreichbaren, entfernten und offline Mitgliedern sowie tatsächlichen Forever-Verbrauchsgegenständen. Die Offline-Tests prüfen Verträge und Fehlerfälle, keine Serverzustellung.
+
+## 0.1.0-beta.3: bestehenden Namen und Befehl beibehalten
+
+Der Produktname bleibt **Guild Copilot**, der Befehl **`/gcp`** mit Alias **`/guildcopilot`**. Das gilt auch für Titel, Einstellungen, Chat-Ausgaben, Einrichtungsassistent und Übersetzungen. Das vorhandene GitHub-Repository `stryker-max/GuildCopilot-Forever` enthält die Forever-Fassung; seine technische Trennung ist keine Produktumbenennung.
+
+## 0.1.0-beta.2: Abgleich mit dem Forever-Client
+
+Große Rezepte behalten ihre vollständigen Reagenzienlisten durch zusammengesetzte FD/FC-Transfers. Rezeptabgleiche erfordern beta.2 auf beiden Seiten; alte C/D-Transfers werden weiterhin gelesen. Der unberührte beta.1-Gildenfortschrittswert wird beim Laden korrigiert, bearbeitete Gildenprofile bleiben erhalten.
+
+Die erste Portierung enthielt noch unzutreffende Annahmen über Realmnamen und Talentabfragen. Der aktuelle Stand verwendet das zweiteilige Forever-Namensmodell und das öffentliche `C_Traits`-Gruppenmodell aus Blizzards `Camelot`-UI. Berufs-Hauptpfad, Fehler bei der Herstellung, lange Sync-Identitäten, Paketgrößen, Client-Sendesperren und der TBC-Gildenfortschrittswert sind korrigiert. Die Diagnose erklärt die weiterhin auf Level 60 gefilterte Raiderliste. Die [Quellenbasis](docs/FOREVER-GRUNDLAGE.md) und [Spielabnahme](docs/BETA-ABNAHME.md) beschreiben den aktuellen Zielstand.
+
+Die Vertragsprüfungen laufen gegen Quelle und entpacktes Paket. Die tatsächliche Namensdarstellung, Mehrspieler-Kommunikation, Rezeptausbeute und Persistenz nach Neustart bleiben Teil der Abnahme im laufenden Beta-Client. Ein erfolgreicher Offline-Test ist dafür keine Freigabe. Die nachstehenden Angaben zu Talentabfragen und Realmanteilen dokumentieren den ursprünglichen Stand beta.1; sie sind durch beta.2 ersetzt.
 
 ## 0.1.0-beta.1: eigenständige Beta-Portierung
 
@@ -18,5 +56,5 @@ Die [Beta-Checkliste](docs/BETA-ABNAHME.md) im Spiel ausführen: Start, Sichtpr�
 
 - Forever-Regelsatz für Ausrüstung und Verzauberungspflichten, jeweils mit Quellen und eigener Regelversion.
 - Bestätigte Instanzvorgaben und Gruppengrößen.
-- Anpassungen nach weiteren Beta-Builds; Diagnose über `/gcpf client`.
+- Anpassungen nach weiteren Beta-Builds; Diagnose über `/gcp client`.
 - Separate CurseForge-Projektanlage nur bei einer ausdrücklichen Veröffentlichungsentscheidung.

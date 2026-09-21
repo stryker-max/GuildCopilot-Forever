@@ -6,7 +6,7 @@ import JSZip from 'jszip';
 import { root, source, addonName, files, packageAddon } from './package.mjs';
 const toc = readFileSync(join(source, addonName + '.toc'), 'utf8');
 assert.match(toc, /^## Interface: 16001$/m);
-assert.match(toc, /^## Title: Guild Copilot Forever$/m);
+assert.match(toc, /^## Title: Guild Copilot$/m);
 assert.match(toc, /^## SavedVariables: GuildCopilotForeverDB$/m);
 const version = toc.match(/^## Version: (.+)$/m)[1].trim();
 assert.equal(version, JSON.parse(readFileSync(join(root, 'package.json'))).version);
@@ -25,6 +25,9 @@ for (const file of files(source).filter(x => x.endsWith('.lua'))) {
 assert.ok(!files(join(root, '.github')).some(x => /curseforge/i.test(x)), 'TBC publishing workflow copied');
 const first = await packageAddon();
 const zip = await JSZip.loadAsync(readFileSync(first.archive));
+for (const entry of Object.values(zip.files)) {
+  assert.equal(entry.date.toISOString(), '2020-01-01T00:00:00.000Z', 'Variable ZIP timestamp: ' + entry.name);
+}
 const actual = Object.keys(zip.files).filter(x => !zip.files[x].dir).sort();
 const expected = [...files(source).map(x => addonName + '/' + x), addonName + '/LICENSE'].sort();
 assert.deepEqual(actual, expected);

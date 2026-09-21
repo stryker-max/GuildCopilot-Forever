@@ -40,9 +40,8 @@ local DEFAULTS = {
         minimap = {
             hidden = false,
             angle = 225,
-            -- Wird das Symbol weit genug von der Minimap weggezogen, loest es
-            -- sich vom Ring und steht frei; dann gelten x und y statt des
-            -- Winkels. Die Koordinaten sind UIParent-Einheiten von unten links.
+            -- Der Winkel bestimmt die Position am aktuellen Minimap-Rand.
+            -- Umschalt + Ziehen speichert eine freie Position in UIParent-Einheiten.
             free = false,
             x = 0,
             y = 0,
@@ -168,9 +167,11 @@ local DEFAULTS = {
 local GUILD_DEFAULTS = {
     editorRecoveryAvailable = true,
     profile = {
+        enabled = true,
+        disabledFields = {},
         description = "",
         raidTimes = "",
-        progress = "SSC/TK",
+        progress = "",
         lootSystem = "",
         discord = "",
         contact = "",
@@ -273,6 +274,21 @@ local GUILD_DEFAULTS = {
 }
 
 GC.DB = {}
+GC.DB.GuildProfileFields = { "description", "raidTimes", "progress", "lootSystem", "discord", "contact" }
+
+function GC.DB:IsGuildProfileFieldEnabled(key)
+    local profile = self:GetGuild().profile
+    return profile.enabled ~= false and not (profile.disabledFields and profile.disabledFields[key])
+end
+
+function GC.DB:GetActiveGuildProfile()
+    local profile = self:GetGuild().profile
+    local active = {}
+    for _, key in ipairs(self.GuildProfileFields) do
+        active[key] = profile.enabled ~= false and not profile.disabledFields[key] and (profile[key] or "") or ""
+    end
+    return active
+end
 
 function GC.DB:Initialize()
     local GuildCopilotForeverDB = _G[GC.Client.savedVariable]
@@ -406,6 +422,11 @@ function GC.DB:GetGuild()
     end
 
     local guildData = GC.Util.MergeDefaults(self.data.guilds[guildKey], GUILD_DEFAULTS)
+    -- Remove only beta.1's untouched default; preserve edited guild profiles.
+    if GC.Client.isForever and guildData.profile.progress == "SSC/TK"
+        and (tonumber(guildData.profile.updatedAt) or 0) == 0 then
+        guildData.profile.progress = ""
+    end
     self.data.guilds[guildKey] = guildData
     self.guildCacheKey = guildKey
     self.guildCache = guildData
@@ -491,6 +512,11 @@ function GC.DB:Prune()
                 table.remove(guildData.inbox, index)
             end
         end
+    end
+    if #guildData.inbox > 100 and GC.Chat then
+        table.sort(guildData.inbox, function(a, b)
+            return GC.Chat:LeadLastActivity(a) > GC.Chat:LeadLastActivity(b)
+        end)
     end
     while #guildData.inbox > 100 do
         table.remove(guildData.inbox)

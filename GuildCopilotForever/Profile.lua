@@ -23,8 +23,17 @@ local function ReadProfession(professionIndex)
     if not name then
         return nil
     end
+    -- Forever's profession book resolves the current rank through this API.
+    if C_TradeSkillUI and type(C_TradeSkillUI.GetProfessionInfoBySkillLineID) == "function" and skillLine then
+        local ok, info = pcall(C_TradeSkillUI.GetProfessionInfoBySkillLineID, skillLine)
+        if ok and not GC.Client.IsSecret(info) and type(info) == "table"
+            and not GC.Client.HasSecretArguments(info.skillLevel, info.maxSkillLevel)
+            and ((tonumber(info.skillLevel) or 0) > 0 or (tonumber(info.maxSkillLevel) or 0) > 0) then
+            skillLevel, maxSkillLevel = info.skillLevel, info.maxSkillLevel
+        end
+    end
     return {
-        name = name,
+        name = GC.CanonicalProfessionName(name) or name,
         skillLevel = tonumber(skillLevel) or 0,
         maxSkillLevel = tonumber(maxSkillLevel) or 0,
         skillLine = tonumber(skillLine),
@@ -181,13 +190,6 @@ end
 -- Ausruestungsabgleich (GearAudit) ohnehin ueber die halbe Gilde. Diese
 -- Funktion haengt sich dort an, statt einen zweiten Verkehr aufzumachen.
 local function ReadInspectTalentPoints(tabIndex)
-    if GC.Client.isForever and C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo then
-        local results = { pcall(C_SpecializationInfo.GetSpecializationInfo, tabIndex, true) }
-        if results[1] and not GC.Client.IsSecret(results[8]) and type(results[8]) == "number" then
-            return results[8]
-        end
-        return 0
-    end
     if GetTalentTabInfo then
         local results = { pcall(GetTalentTabInfo, tabIndex, true, false, 1) }
         if results[1] and type(results[6]) == "number" then
@@ -195,6 +197,22 @@ local function ReadInspectTalentPoints(tabIndex)
         end
     end
     return 0
+end
+
+local function ForeverTalentSpec(classFile, inspect)
+    local points = GC.Client.ReadTalentGroups(inspect)
+    if not points then return nil, nil end
+    local best, maximum, tied = nil, 0, false
+    for index, spent in ipairs(points) do
+        if spent > maximum then
+            best, maximum, tied = index, spent, false
+        elseif spent == maximum then
+            tied = true
+        end
+    end
+    local signature = table.concat(points, "/")
+    if not best or tied then return nil, signature end
+    return classFile .. ":" .. best, signature
 end
 
 function GC.Profile:DetectTalentSpecForUnit(unit)
@@ -206,6 +224,10 @@ function GC.Profile:DetectTalentSpecForUnit(unit)
     local classInfo = classFile and GC.Classes[classFile]
     if not classInfo then
         return nil
+    end
+    if GC.Client.isForever then
+        local spec, signature = ForeverTalentSpec(classFile, unit ~= "player")
+        return spec, signature, classFile
     end
 
     local points = {}
@@ -234,6 +256,10 @@ function GC.Profile:DetectTalentSpec()
     local classInfo = classFile and GC.Classes[classFile]
     if not classInfo then
         return nil, "0/0/0"
+    end
+    if GC.Client.isForever then
+        local spec, signature = ForeverTalentSpec(classFile, false)
+        return spec, signature, classFile, classID
     end
 
     local points = {}
@@ -485,6 +511,10 @@ end
 function GC.Profile:Refresh()
     local profile = self:Get()
     local detectedSpecKey, signature, classFile, classID = self:DetectTalentSpec()
+    -- Loading, combat restrictions and uncommitted edits are not a new build.
+    if signature == nil then
+        detectedSpecKey, signature = profile.detectedSpecKey, profile.talentSignature
+    end
     local changed = profile.detectedSpecKey ~= detectedSpecKey
         or profile.talentSignature ~= signature
         or profile.classFile ~= classFile
@@ -631,6 +661,10 @@ profileEvents:RegisterEvent("PLAYER_LEVEL_UP")
 profileEvents:RegisterEvent("PLAYER_GUILD_UPDATE")
 profileEvents:RegisterEvent("SKILL_LINES_CHANGED")
 profileEvents:RegisterEvent("TRADE_SKILL_SHOW")
+for _, event in ipairs({ "PLAYER_TALENT_UPDATE", "ACTIVE_PLAYER_SPECIALIZATION_CHANGED",
+    "TRAIT_CONFIG_UPDATED", "PLAYER_REGEN_ENABLED" }) do
+    GC.Client.RegisterEvent(profileEvents, event)
+end
 profileEvents:SetScript("OnEvent", function(_, event)
     GC.Profile:OnGameEvent(event)
 end)

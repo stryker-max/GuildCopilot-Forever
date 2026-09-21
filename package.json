@@ -1,6 +1,6 @@
 {
   "name": "guildcopilot-forever",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.8",
   "private": true,
   "description": "Standalone Guild Copilot for WoW Forever Beta",
   "scripts": {

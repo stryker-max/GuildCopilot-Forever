@@ -38,7 +38,7 @@ local STEPS = {
     {
         key = "PROFESSIONS",
         label = "Rezepte einlesen",
-        hint = "Öffne einmal jedes deiner Berufsfenster – die Rezepte darin kann Guild Copilot Forever nur dann lesen.",
+        hint = "Öffne einmal jedes deiner Berufsfenster – die Rezepte darin kann Guild Copilot nur dann lesen.",
     },
     {
         key = "GEAR",

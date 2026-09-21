@@ -36,12 +36,13 @@ local THEME = {
 -- Karte auf der Einstellungsseite lesen alle hier. Zwei Listen liefen
 -- auseinander (Lektion aus 0.9.47).
 local SLASH_COMMANDS = {
-    { command = "/gcpf", description = "öffnet und schließt Guild Copilot Forever" },
-    { command = "/gcpf ver", description = "prüft, wer in Gruppe oder Gilde das Addon hat und in welcher Version" },
-    { command = "/gcpf welcome", description = "öffnet den Einrichtungsassistenten mit der Funktionstour" },
-    { command = "/gcpf recruite", description = "blendet den Werbebalken ein oder aus" },
-    { command = "/gcpf debug", description = "misst die Laufzeit; ein zweiter Aufruf zeigt das Ergebnis" },
-    { command = "/gcpf help", description = "zeigt diese Liste im Chat" },
+    { command = "/gcp", description = "öffnet und schließt Guild Copilot" },
+    { command = "/gcp ver", description = "prüft, wer in Gruppe oder Gilde das Addon hat und in welcher Version" },
+    { command = "/gcp welcome", description = "öffnet den Einrichtungsassistenten mit der Funktionstour" },
+    { command = "/gcp recruite", description = "blendet den Werbebalken ein oder aus" },
+    { command = "/gcp debug", description = "misst die Laufzeit; ein zweiter Aufruf zeigt das Ergebnis" },
+    { command = "/gcp help", description = "zeigt diese Liste im Chat" },
+    { command = "/gcp raidcheck", description = "erfasst außerhalb des Kampfes Gruppen-Buffs und eigene Verbrauchsvorräte" },
 }
 
 -- Masse der Seitenleiste. Sie muessen zur Fensterhoehe passen: kommt ein
@@ -1385,7 +1386,7 @@ function GC.UI:CreateMainFrame()
     frame:EnableKeyboard(false)
     frame:Hide()
     table.insert(UISpecialFrames, "GuildCopilotForeverFrame")
-    -- Schliessen ueber ×, Escape oder /gcpf: Ein Fokus in einem der eigenen
+    -- Schliessen ueber ×, Escape oder /gcp: Ein Fokus in einem der eigenen
     -- Felder darf das Fenster nicht ueberleben (siehe ReleaseOwnKeyboardFocus).
     frame:HookScript("OnHide", function(self)
         ReleaseOwnKeyboardFocus(self)
@@ -1403,7 +1404,7 @@ function GC.UI:CreateMainFrame()
     mark:SetPoint("LEFT", header, "LEFT", 16, 0)
     mark:SetTexture("Interface\\AddOns\\GuildCopilotForever\\Media\\GuildCopilotForeverLogo")
 
-    local title = CreateLabel(header, "Guild Copilot Forever", { title = true })
+    local title = CreateLabel(header, "Guild Copilot", { title = true })
     title:SetPoint("LEFT", mark, "RIGHT", 12, 7)
     local subtitle = CreateLabel(header, GC.Client.label .. "  •  v" .. GC.Constants.VERSION, { muted = true })
     subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -2)
@@ -2017,7 +2018,7 @@ function GC.UI:BuildDashboardPage()
     -- deshalb jetzt hervorgehoben vorn, und dieselbe Aussage wiederholt sich
     -- in der Spaltenueberschrift "ZULETZT ONLINE".
     CreatePageTitle(page, "Gildenübersicht",
-        (GC.L("|cff2ec7dbNach zuletzt online sortiert|r – bis zu {n} Level-70-Spieler aus den gewählten Raider-Rängen, mit Rang, Raidprofil und Berufen."):gsub("70", tostring(GC.Client.maxLevel))
+        (GC.L("|cff2ec7dbNach zuletzt online sortiert|r – bis zu {n} Spieler aus den gewählten Raider-Rängen, mit Rang, Raidprofil und Berufen.")
             :gsub("{n}", tostring(GC.Constants.ACTIVE_RAIDER_LIMIT))))
 
     page.metricCards = {}
@@ -2059,7 +2060,7 @@ function GC.UI:BuildDashboardPage()
         end
         local stats = GC.Sync:GetAddonUserStats()
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-        GameTooltip:SetText(GC.L("Guild Copilot Forever in der Gilde"))
+        GameTooltip:SetText(GC.L("Guild Copilot in der Gilde"))
         GameTooltip:AddLine(stats.players .. " Spieler mit "
             .. stats.known .. " erkannten Charakteren, davon " .. stats.compatible
             .. " mit passender Datenversion", 1, 1, 1, true)
@@ -2084,7 +2085,7 @@ function GC.UI:BuildDashboardPage()
         end
     end)
 
-    local rosterCard = CreateCard(page, "Aktive Raider  •  Level " .. GC.Client.maxLevel)
+    local rosterCard = CreateCard(page, "Aktive Raider")
     rosterCard:SetSize(776, 408)
     rosterCard:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -158)
     page.rankFilterButton = CreateButton(rosterCard, "Ränge: alle", 154, 28, function()
@@ -2303,7 +2304,7 @@ end
 function GC.UI:BuildSettingsPage()
     local page = self.pages.SETTINGS
     CreatePageTitle(page, "Einstellungen",
-        "Lokale Komfortoptionen und gildenweite Berechtigungen für Guild Copilot Forever.")
+        "Lokale Komfortoptionen und gildenweite Berechtigungen für Guild Copilot.")
 
     local scroll = CreateModernScrollFrame(page)
     scroll:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -58)
@@ -2352,7 +2353,7 @@ function GC.UI:BuildSettingsPage()
     page.activeRankCard, page.activeRankToggles = BuildRankCard(
         "Aktive Raider",
         0, 1604,
-        GC.L("Diese Ränge erscheinen als Level-70-Raider in der Übersicht."):gsub("70", tostring(GC.Client.maxLevel)),
+        GC.L("Diese Ränge erscheinen unabhängig von der Stufe in der Übersicht."),
         function(rankIndex, checked)
             GC.Roster:SetRankActive(rankIndex, checked)
         end
@@ -2556,10 +2557,11 @@ function GC.UI:BuildSettingsPage()
     end)
     page.minimapResetButton:SetPoint("TOPLEFT", generalCard, "TOPLEFT", 18, -100)
     CreateLabel(generalCard,
-        "Das Symbol lässt sich frei ziehen: nahe der Minimap am Ring entlang, weiter weg überall hin.", {
+        "Ziehen: am Minimap-Rand. Umschalt + Ziehen: frei platzieren. Normales Ziehen heftet es wieder an.", {
         muted = true,
         width = 460,
         height = 28,
+        multiline = true,
     }):SetPoint("TOPLEFT", generalCard, "TOPLEFT", 258, -100)
 
     -- Der Bewerberton meldet einen fremden Interessenten. Wer nicht rekrutiert,
@@ -2892,7 +2894,7 @@ function GC.UI:BuildSettingsPage()
     }):SetPoint("TOPLEFT", windowCard, "TOPLEFT", 18, -122)
 
     -- Die Chatbefehle dort, wo man sie sucht (Owner-Wunsch): auf der
-    -- Einstellungsseite, gespeist aus derselben Tabelle wie /gcpf help.
+    -- Einstellungsseite, gespeist aus derselben Tabelle wie /gcp help.
     local commandCard = CreateCard(content, "Chat-Befehle")
     commandCard:SetSize(752, 156)
     commandCard:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
@@ -3244,7 +3246,7 @@ end
 -- Vorzeitiges Schliessen, egal ob ueber das × oder "Spaeter": zuklappen und
 -- beim ersten Mal je Charakter den Weg zurueck erklaeren. Ein gemeinsamer
 -- Weg fuer beide Knoepfe - die Frage "wie komme ich zurueck?" stellt sich
--- nur einmal, nicht einmal je Knopf. "Fertig" und "Guild Copilot Forever öffnen"
+-- nur einmal, nicht einmal je Knopf. "Fertig" und "Guild Copilot öffnen"
 -- gehen bewusst NICHT hierdurch: Wer durch ist, verabschiedet sich nicht
 -- auf spaeter.
 function GC.UI:HideWelcomeWithHint()
@@ -3276,7 +3278,7 @@ function GC.UI:ShowWizardLaterHint()
         })
         title:SetPoint("TOP", hint, "TOP", 0, -16)
         local text = CreateLabel(hint,
-            "Du kannst die Einrichtung jederzeit neu starten: mit /gcpf welcome"
+            "Du kannst die Einrichtung jederzeit neu starten: mit /gcp welcome"
                 .. " oder über den Knopf „Einrichtung“ oben im Guild-Copilot-Fenster.",
             { muted = true, align = "CENTER", width = 360, height = 46, vertical = "TOP" })
         text:SetPoint("TOP", hint, "TOP", 0, -44)
@@ -3299,7 +3301,7 @@ end
 local function BuildWizardTourPage(frame)
     local page = CreateWizardPage(frame, "TOUR")
 
-    local heading = CreateLabel(page, "Was Guild Copilot Forever kann", {
+    local heading = CreateLabel(page, "Was Guild Copilot kann", {
         title = true,
         align = "CENTER",
         width = 508,
@@ -3357,7 +3359,7 @@ local function BuildWizardProfilePage(frame)
     local page = CreateWizardPage(frame, "STEP_PROFILE")
     CreateWizardStepHeader(page, "Schritt 1 von 3", "Raidprofil bestätigen",
         "Damit Raidleitung und Rekrutierung wissen, was sie an dir haben."
-            .. " Die Spec liest Guild Copilot Forever aus deinen Talenten – bestätigen genügt.")
+            .. " Die Spec liest Guild Copilot aus deinen Talenten – bestätigen genügt.")
 
     page.detected = CreateLabel(page, "", { width = 508, height = 16 })
     page.detected:SetPoint("TOPLEFT", page, "TOPLEFT", 26, -104)
@@ -3435,7 +3437,7 @@ local function BuildWizardProfessionsPage(frame)
     local page = CreateWizardPage(frame, "STEP_PROFESSIONS")
     CreateWizardStepHeader(page, "Schritt 2 von 3", "Rezepte einlesen",
         "WoW gibt Rezepte nur heraus, solange das Berufsfenster offen ist."
-            .. " Der Knopf öffnet es direkt – alles Weitere liest Guild Copilot Forever von selbst.")
+            .. " Der Knopf öffnet es direkt – alles Weitere liest Guild Copilot von selbst.")
 
     page.rows = {}
     for index = 1, 2 do
@@ -3500,7 +3502,7 @@ end
 local function BuildWizardGearPage(frame)
     local page = CreateWizardPage(frame, "STEP_GEAR")
     CreateWizardStepHeader(page, "Schritt 3 von 3", "Ausrüstung prüfen",
-        "Hier musst du nichts tun: Guild Copilot Forever prüft deine angelegten Gegenstände"
+        "Hier musst du nichts tun: Guild Copilot prüft deine angelegten Gegenstände"
             .. " selbst auf fehlende Verzauberungen und leere Sockel.")
 
     page.findings = CreateLabel(page, "", { width = 508, height = 96, vertical = "TOP" })
@@ -3532,8 +3534,8 @@ local function BuildWizardDonePage(frame)
     page.status:SetPoint("TOPLEFT", page, "TOPLEFT", 26, -52)
 
     local lines = {
-        "Das Minimap-Symbol öffnet Guild Copilot Forever. Ein Punkt daran heißt: Hier wartet etwas auf dich.",
-        "/gcpf öffnet und schließt das Fenster, /gcpf help zeigt alle Befehle im Chat.",
+        "Das Minimap-Symbol öffnet Guild Copilot. Ein Punkt daran heißt: Hier wartet etwas auf dich.",
+        "/gcp öffnet und schließt das Fenster, /gcp help zeigt alle Befehle im Chat.",
         "Der Knopf „Einrichtung“ im Fensterkopf bringt dich jederzeit zu diesem Assistenten zurück.",
     }
     for index, text in ipairs(lines) do
@@ -3546,7 +3548,7 @@ local function BuildWizardDonePage(frame)
         label:SetPoint("TOPLEFT", page, "TOPLEFT", 48, -100 - ((index - 1) * 50))
     end
 
-    local open = CreateButton(page, "Guild Copilot Forever öffnen", 220, 40, function()
+    local open = CreateButton(page, "Guild Copilot öffnen", 220, 40, function()
         GC.UI:HideWelcome()
         GC.UI:CreateMainFrame()
         GC.UI.frame:Show()
@@ -3633,7 +3635,7 @@ function GC.UI:CreateWelcomeFrame()
             if GC.Chat and GC.Chat.PlaySuccessSound then
                 GC.Chat:PlaySuccessSound("LEVEL_UP")
             end
-            GC.UI:ShowOrderBanner("Guild Copilot Forever is ready for takeoff")
+            GC.UI:ShowOrderBanner("Guild Copilot is ready for takeoff")
             GC.UI:HideWelcome()
         else
             GC.Onboarding:WizardGo(1)
@@ -4684,7 +4686,7 @@ local function MissingGuildProfileFields()
         { key = "discord", label = "Discord" },
     }
     for _, field in ipairs(fields) do
-        if GC.Util.Trim(profile[field.key]) == "" then
+        if GC.DB:IsGuildProfileFieldEnabled(field.key) and GC.Util.Trim(profile[field.key]) == "" then
             missing[#missing + 1] = field.label
         end
     end
@@ -4780,7 +4782,8 @@ function GC.UI:RefreshSuggestions()
     else
         page.rosterRefreshStatus:SetText(GC.L("Noch nicht abgefragt"))
     end
-    page.metricCards.PROFILE.value:SetText(#missing == 0 and "BEREIT" or (#missing .. " OFFEN"))
+    page.metricCards.PROFILE.value:SetText(GC.DB:GetGuild().profile.enabled == false and GC.L("DEAKTIVIERT")
+        or (#missing == 0 and "BEREIT" or (#missing .. " OFFEN")))
     page.metricCards.COVERAGE.value:SetText(summary.knownProfiles .. "/" .. summary.total)
     page.metricCards.IMPORTS.value:SetText(summary.importedProfiles)
 
@@ -5489,7 +5492,7 @@ function GC.UI:BuildWorkshopPage()
         { muted = true, width = 274, height = 30, vertical = "TOP" })
 
     page.workshopStatus = CreateLabel(page,
-        "Öffne deine Berufe einmal, damit Guild Copilot Forever die bekannten Rezepte einliest.",
+        "Öffne deine Berufe einmal, damit Guild Copilot die bekannten Rezepte einliest.",
         { muted = true, width = 776, height = 16 })
     page.workshopStatus:SetPoint("BOTTOMLEFT", page, "BOTTOMLEFT", 0, 0)
 
@@ -6982,7 +6985,7 @@ function GC.UI:BuildOrderCreateDialog(page)
             GC.UI:SetWorkshopView("ORDERS")
             if GC.Orders:GetOnlineAddonUserCount() == 0 then
                 GC.UI:SetOrdersStatus((message or "")
-                    .. " |cffe8b84bGerade ist niemand mit Guild Copilot Forever online - "
+                    .. " |cffe8b84bGerade ist niemand mit Guild Copilot online - "
                     .. "verteilt wird beim nächsten gemeinsamen Login.|r", true)
             else
                 GC.UI:SetOrdersStatus(message, true)
@@ -7060,7 +7063,7 @@ function GC.UI:OpenOrderCreateDialog(recipeKey)
     -- der Auftrag geht nicht verloren, aber er erreicht die Gilde erst
     -- beim nächsten gemeinsamen Online-Moment.
     if GC.Orders:GetOnlineAddonUserCount() == 0 then
-        dialog.status:SetText(GC.L("|cffe8b84bHinweis:|r Gerade ist niemand mit Guild Copilot Forever online. "
+        dialog.status:SetText(GC.L("|cffe8b84bHinweis:|r Gerade ist niemand mit Guild Copilot online. "
             .. "Der Auftrag wird gespeichert und verteilt sich, sobald du gemeinsam "
             .. "mit anderen Addon-Nutzern online bist."))
         SetTextColor(dialog.status, THEME.text)
@@ -7396,7 +7399,7 @@ function GC.UI:OpenOrderStatsDialog()
         -- wurde, ist als Auftrag gezählt, aber nie als Stückzahl - eine 0
         -- neben vier erledigten Aufträgen wäre sonst ein Rätsel.
         if totalItems < totalOrders then
-            lines[#lines + 1] = "\nStückzahlen zählt Guild Copilot Forever seit Version 0.9.110;"
+            lines[#lines + 1] = "\nStückzahlen zählt Guild Copilot seit Version 0.9.110;"
                 .. " ältere Aufträge stehen nur mit ihrer Anzahl darin."
         end
     end
@@ -8188,7 +8191,7 @@ local function AttachAutoRepeatTooltip(toggle)
             .. " nächsten Tastendruck raus – gleich welche Taste, auch beim Laufen.", 0.31, 0.79, 1, true)
         GameTooltip:AddLine("Bestätigungspflicht und Cooldowns gelten unverändert."
             .. " Balken geschlossen = Automatik pausiert."
-            .. " Welche Taste du drückst, liest Guild Copilot Forever nicht.", 1, 0.72, 0.25, true)
+            .. " Welche Taste du drückst, liest Guild Copilot nicht.", 1, 0.72, 0.25, true)
         GameTooltip:Show()
     end)
     toggle:HookScript("OnLeave", function()
@@ -8421,7 +8424,8 @@ end
 
 function GC.UI:BuildInboxPage()
     local page = self.pages.INBOX
-    CreatePageTitle(page, "Postfach", "Whispers und erkannte „Suche Gilde“-Nachrichten werden hier gesammelt.")
+    local _, captureHelp = CreatePageTitle(page, "Postfach", GC.Chat:GetCaptureStatus())
+    page.captureHelp = captureHelp
 
     local scroll = CreateModernScrollFrame(page)
     scroll:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -58)
@@ -8672,6 +8676,7 @@ function GC.UI:BuildInboxPage()
         end
     end)
     info:SetPoint("LEFT", thanks, "RIGHT", 8, 0)
+    page.infoReplyButton = info
     local discord = CreateButton(detailCard, "Discord", 105, 30, function()
         local lead = SelectedLeadForAction()
         if lead then
@@ -8679,18 +8684,21 @@ function GC.UI:BuildInboxPage()
         end
     end)
     discord:SetPoint("LEFT", info, "RIGHT", 8, 0)
+    page.discordReplyButton = discord
 
     page.replyButton = CreateButton(detailCard, "Antworten", 248, 38, function()
         local lead = SelectedLeadForAction()
-        if lead and GC.Chat:SendReply(lead.name, page.replyEdit:GetText()) then
+        local sent, reason
+        if lead then sent, reason = GC.Chat:SendReply(lead.name, page.replyEdit:GetText()) end
+        if sent then
             -- Verschickt ist verschickt: Der Entwurf hat seinen Zweck erfuellt
             -- und darf nicht beim naechsten Aufruf wieder dastehen.
             page.replyDrafts[GC.Util.NormalizeName(lead.name)] = nil
             page.replyEdit:SetText(GC.L(""))
-            page.replyResult:SetText("Antwort an " .. lead.name .. " gesendet.")
+            page.replyResult:SetText("Antwort an " .. lead.name .. " an den Client übergeben.")
             SetTextColor(page.replyResult, THEME.success)
         else
-            page.replyResult:SetText(GC.L("Bitte Interessent und Antwort auswählen."))
+            page.replyResult:SetText(reason or GC.L("Bitte Interessent und Antwort auswählen."))
             SetTextColor(page.replyResult, THEME.danger)
         end
         GC.UI:RefreshInbox()
@@ -8788,7 +8796,7 @@ function GC.UI:BuildInboxPage()
             return
         end
 
-        GC.Sync:QueueGuildProfile()
+        GC.Sync:QueueGuildProfile(true)
         GC:FireCallback("GUILD_PROFILE_UPDATED")
         page.templateStatus:SetText(GC.L("Vorlagen gespeichert und für die Gilde synchronisiert."))
         SetTextColor(page.templateStatus, THEME.success)
@@ -9051,6 +9059,7 @@ function GC.UI:RefreshInbox()
     if not page then
         return
     end
+    if page.captureHelp then page.captureHelp:SetText(GC.Chat:GetCaptureStatus()) end
 
     local canEditTemplates = GC.Roster:CanEditGuildProfile()
     local templates = GC.DB:GetGuild().replyTemplates
@@ -9178,6 +9187,8 @@ function GC.UI:RefreshInbox()
         self:SetLeadProfileLinks(nil)
         page.replyButton:Disable()
         page.inviteButton:Disable()
+        SetButtonEnabled(page.infoReplyButton, false)
+        SetButtonEnabled(page.discordReplyButton, false)
         return
     end
 
@@ -9201,6 +9212,8 @@ function GC.UI:RefreshInbox()
     self:SetLeadProfileLinks(lead)
     page.replyButton:Enable()
     page.inviteButton:Enable()
+    SetButtonEnabled(page.infoReplyButton, GC.Recruitment:GenerateReply("INFO", lead.name) ~= "")
+    SetButtonEnabled(page.discordReplyButton, GC.Recruitment:GenerateReply("DISCORD", lead.name) ~= "")
 end
 
 -- Die Linkfelder sind bewusst nur zum Kopieren da: WoW-Addons koennen weder
@@ -9231,7 +9244,8 @@ function GC.UI:SetLeadProfileLinks(lead)
         end
     end
     if missing then
-        page.leadLinkNotice:SetText(GC.L("Ohne erkennbaren Realm des Interessenten lassen sich keine Profil-Links bilden."))
+        page.leadLinkNotice:SetText(GC.Client.isForever and "Für Forever sind noch keine verifizierten Profil-Linkziele eingerichtet."
+            or GC.L("Ohne erkennbaren Realm des Interessenten lassen sich keine Profil-Links bilden."))
     else
         page.leadLinkNotice:SetText(GC.L(""))
     end
@@ -9239,12 +9253,15 @@ end
 
 function GC.UI:BuildGuildPage()
     local page = self.pages.GUILD
-    CreatePageTitle(page, "Gildenprofil", "Diese Angaben werden gildenweit synchronisiert und fließen in Werbe- und Antworttexte ein.")
+    CreatePageTitle(page, "Gildenprofil", "Nur aktivierte Angaben fließen in neue Texte ein. Ausgeschaltete Werte bleiben gespeichert. Änderungen mit Speichern übernehmen.")
 
     local card = CreateCard(page, "Texte & Eckdaten")
     card:SetSize(776, 490)
     card:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -66)
     page.guildFields = {}
+    page.guildFieldToggles = {}
+    page.guildEnabled = CreateToggle(card, "Gildenprofil verwenden", function() GC.UI:RefreshGuildFieldAvailability() end)
+    page.guildEnabled:SetPoint("TOPLEFT", card, "TOPLEFT", 500, -12)
     local fields = {
         { key = "description", label = "Kurzbeschreibung", y = -52, multiline = true, height = 78 },
         { key = "raidTimes", label = "Raidzeiten", y = -150 },
@@ -9254,8 +9271,10 @@ function GC.UI:BuildGuildPage()
         { key = "contact", label = "Kontaktperson", y = -358 },
     }
     for _, definition in ipairs(fields) do
-        local label = CreateLabel(card, definition.label, { muted = true, width = 150 })
-        label:SetPoint("TOPLEFT", card, "TOPLEFT", 18, definition.y)
+        local toggle = CreateToggle(card, definition.label, function() GC.UI:RefreshGuildFieldAvailability() end)
+        toggle:SetPoint("TOPLEFT", card, "TOPLEFT", 18, definition.y)
+        toggle.text:SetWidth(140)
+        page.guildFieldToggles[definition.key] = toggle
         local edit
         if definition.multiline then
             edit = CreateTextArea(card, 558, definition.height, 800)
@@ -9273,8 +9292,11 @@ function GC.UI:BuildGuildPage()
             return
         end
         local profile = GC.DB:GetGuild().profile
+        profile.enabled = page.guildEnabled:GetChecked() == true
+        profile.disabledFields = {}
         for key, edit in pairs(page.guildFields) do
             profile[key] = GC.Util.Trim(edit:GetText())
+            if not page.guildFieldToggles[key]:GetChecked() then profile.disabledFields[key] = true end
         end
         profile.updatedAt = GC.Util.Now()
         GC.DB:GetGuild().recruitment.adText = GC.Recruitment:GenerateAdvertisement()
@@ -9291,7 +9313,8 @@ function GC.UI:BuildGuildPage()
         end
 
         if GC.Sync and GC.Sync.QueueGuildProfile then
-            GC.Sync:QueueGuildProfile()
+            -- Auch das Ausschalten einmal an die Gilde weitergeben.
+            GC.Sync:QueueGuildProfile(true)
         end
         GC:FireCallback("GUILD_PROFILE_UPDATED")
         page.saveResult:SetText(GC.L("Gespeichert und zur Gildensynchronisierung vorgemerkt."))
@@ -9303,6 +9326,22 @@ function GC.UI:BuildGuildPage()
     page.saveResult:SetPoint("LEFT", page.guildSaveButton, "RIGHT", 14, 0)
 end
 
+function GC.UI:RefreshGuildFieldAvailability()
+    local page = self.pages.GUILD
+    local canEdit = GC.Roster:CanEditGuildProfile()
+    if canEdit then page.guildEnabled:Enable() else page.guildEnabled:Disable() end
+    page.guildEnabled:SetAlpha(canEdit and 1 or 0.45)
+    for key, edit in pairs(page.guildFields) do
+        local toggle = page.guildFieldToggles[key]
+        local canToggle = canEdit and page.guildEnabled:GetChecked()
+        if canToggle then toggle:Enable() else toggle:Disable() end
+        toggle:SetAlpha(canToggle and 1 or 0.45)
+        local active = page.guildEnabled:GetChecked() and toggle:GetChecked()
+        if canEdit and active then edit:Enable() else edit:ClearFocus(); edit:Disable() end
+        edit.container:SetAlpha(active and 1 or 0.45)
+    end
+end
+
 function GC.UI:RefreshGuild()
     local page = self.pages.GUILD
     if not page then
@@ -9310,7 +9349,9 @@ function GC.UI:RefreshGuild()
     end
     local info = GC.DB:GetGuild().profile
     local canEdit = GC.Roster:CanEditGuildProfile()
+    SetToggle(page.guildEnabled, info.enabled ~= false)
     for key, edit in pairs(page.guildFields) do
+        SetToggle(page.guildFieldToggles[key], not info.disabledFields[key])
         if not edit:HasFocus() then
             edit:SetText(info[key] or "")
         end
@@ -9320,6 +9361,7 @@ function GC.UI:RefreshGuild()
             edit:Disable()
         end
     end
+    self:RefreshGuildFieldAvailability()
     if canEdit then
         page.guildSaveButton:Enable()
         if page.saveResult:GetText() == "" then
@@ -9547,10 +9589,30 @@ end
 function GC.UI:BuildStatisticsPage()
     local page = self.pages.STATISTICS
     if not GC.Client.combatAnalysis then
-        CreatePageTitle(page, "Raidauswertung", GC.Client.combatAnalysisReason)
-        local info = CreateLabel(page, "Gildenverwaltung, Profile, Berufe, Aufträge und Gruppensuche stehen weiterhin zur Verfügung.",
-            { muted = true, width = 740, height = 80, vertical = "TOP" })
-        info:SetPoint("TOPLEFT", page, "TOPLEFT", 18, -100)
+        CreatePageTitle(page, "Raidvorbereitung",
+            "Buffs der erreichbaren Gruppe und eigene Vorräte vor dem Pull prüfen. Eine Momentaufnahme belegt keinen Verbrauch im Raid.")
+        page.preparationButton = CreateButton(page, "Vorbereitung erfassen", 220, 32, function()
+            local ok, message = GC.RaidPreparation:Capture()
+            page.preparationStatus:SetText(message)
+            SetTextColor(page.preparationStatus, ok and THEME.success or THEME.warning)
+            GC.UI:RefreshStatistics()
+        end)
+        page.preparationButton:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -78)
+        local gear = CreateButton(page, "Ausrüstung prüfen", 180, 32, function() GC.UI:ShowPage("GEAR") end)
+        gear:SetPoint("LEFT", page.preparationButton, "RIGHT", 12, 0)
+        page.preparationStatus = CreateLabel(page, "Nur öffentlich lesbare Daten; gesperrte oder entfernte Mitglieder bleiben unbekannt.",
+            { muted = true, width = 760, height = 44, vertical = "TOP" })
+        page.preparationStatus:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -122)
+        local scroll = CreateModernScrollFrame(page)
+        scroll:SetSize(776, 390)
+        scroll:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -174)
+        local content = CreateFrame("Frame", nil, scroll)
+        content:SetSize(744, 390)
+        scroll:SetScrollChild(content)
+        page.preparationContent = content
+        page.preparationText = CreateLabel(content, "", { width = 720, vertical = "TOP" })
+        page.preparationText:SetPoint("TOPLEFT", content, "TOPLEFT", 8, -8)
+        self:RefreshStatistics()
         return
     end
     CreatePageTitle(page, "Raidauswertung",
@@ -9898,7 +9960,15 @@ function GC.UI:BuildStatisticsPage()
 end
 
 function GC.UI:RefreshStatistics()
-    if not GC.Client.combatAnalysis then return end
+    if not GC.Client.combatAnalysis then
+        local page = self.pages.STATISTICS
+        if page and page.preparationText then
+            page.preparationText:SetText(GC.RaidPreparation:ReportText())
+            local height = math.max(390, (page.preparationText:GetStringHeight() or 390) + 24)
+            page.preparationContent:SetHeight(height)
+        end
+        return
+    end
     local page = self.pages.STATISTICS
     if not page then
         return
@@ -12509,10 +12579,12 @@ local function MinimapAngle(y, x)
     return 0
 end
 
--- Ab diesem Abstand zur Minimapmitte loest sich das Symbol vom Ring und steht
--- frei. Der Ring selbst liegt bei 78; der Abstand ist bewusst deutlich groesser,
--- damit ein Verrutschen beim Ziehen am Ring es nicht versehentlich abloest.
-local MINIMAP_FREE_DISTANCE = 130
+-- Die Forever-Minimap kann ihre Groesse aendern. Der Knopf folgt dem Rand
+-- statt einem festen Radius innerhalb der Karte; seine Mitte sitzt am Rahmen.
+local function MinimapRadii()
+    return (tonumber(Minimap:GetWidth()) or 148) / 2 + 4,
+        (tonumber(Minimap:GetHeight()) or 148) / 2 + 4
+end
 
 -- Alles in UIParent-Einheiten rechnen. GetCursorPosition liefert
 -- Bildschirmpixel, GetCenter dagegen Koordinaten im Massstab des jeweiligen
@@ -12531,9 +12603,7 @@ local function MinimapCenterInUISpace()
     return centerX * minimapScale / scale, centerY * minimapScale / scale
 end
 
--- Ring und dunkler Untergrund gehoeren zur Minimap-Optik. Frei platziert sah
--- der offene Goldring wie ein grosses "C" aus (Owner-Screenshot); dort zeigt
--- der Knopf nur noch das Wappen, etwas groesser und mittig.
+-- Frei steht nur das Wappen, am Minimap-Rand mit dem gewohnten Rahmen.
 local function ApplyMinimapButtonChrome(button, free)
     button.border:SetShown(not free)
     button.background:SetShown(not free)
@@ -12549,16 +12619,12 @@ end
 
 function GC.UI:PositionMinimapButton()
     local button = self.minimapButton
-    if not button then
+    if not button or not Minimap then
         return
     end
     local settings = GC.DB:GetSettings().minimap
     button:ClearAllPoints()
     ApplyMinimapButtonChrome(button, settings.free == true)
-
-    -- Frei gesetzt haengt das Symbol an UIParent, nicht mehr an der Minimap:
-    -- Sonst gelten die gespeicherten Koordinaten im Massstab der Minimap und
-    -- das Symbol landet bei abweichender Skalierung woanders.
     if settings.free and UIParent then
         if button:GetParent() ~= UIParent then
             button:SetParent(UIParent)
@@ -12568,16 +12634,13 @@ function GC.UI:PositionMinimapButton()
             tonumber(settings.x) or 0, tonumber(settings.y) or 0)
         return
     end
-
-    if not Minimap then
-        return
-    end
     if button:GetParent() ~= Minimap then
         button:SetParent(Minimap)
         button:SetFrameStrata("MEDIUM")
     end
     local angle = math.rad(tonumber(settings.angle) or 225)
-    button:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * 78, math.sin(angle) * 78)
+    local radiusX, radiusY = MinimapRadii()
+    button:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * radiusX, math.sin(angle) * radiusY)
 end
 
 -- Rueckweg, falls das Symbol irgendwo landet, wo es nicht mehr zu greifen ist.
@@ -12655,7 +12718,7 @@ function GC.UI:AddMinimapButton()
             return
         end
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:SetText(GC.L("Guild Copilot Forever"))
+        GameTooltip:SetText(GC.L("Guild Copilot"))
         local nextStep = GC.Onboarding:GetNextStep()
         if nextStep then
             GameTooltip:AddLine("Einrichtung offen: " .. nextStep, 0.18, 0.78, 0.86, true)
@@ -12663,7 +12726,8 @@ function GC.UI:AddMinimapButton()
         end
         GameTooltip:AddLine("Linksklick: öffnen/schließen", 1, 1, 1)
         GameTooltip:AddLine("Rechtsklick: Einstellungen", 1, 1, 1)
-        GameTooltip:AddLine("Ziehen: am Ring entlang, weiter weg frei platzieren", 1, 1, 1)
+        GameTooltip:AddLine(GC.L("Ziehen: entlang des Minimap-Rands"), 1, 1, 1)
+        GameTooltip:AddLine(GC.L("Umschalt + Ziehen: frei platzieren"), 1, 1, 1)
         GameTooltip:Show()
     end)
     button:SetScript("OnLeave", function()
@@ -12671,31 +12735,33 @@ function GC.UI:AddMinimapButton()
             GameTooltip:Hide()
         end
     end)
-    -- Ziehen: Nah an der Minimap faehrt das Symbol wie gewohnt auf dem Ring,
-    -- weit genug weggezogen loest es sich und steht frei auf dem Bildschirm.
-    -- So braucht es keinen Schalter - die Bewegung selbst sagt, was gemeint ist.
+    -- Den Modus beim Start festlegen: normales Ziehen heftet an, Umschalt
+    -- platziert frei. Die Entfernung allein loest den Knopf nicht mehr ab.
     button:SetScript("OnDragStart", function(self)
+        local freeDrag = IsShiftKeyDown and IsShiftKeyDown()
         self:SetScript("OnUpdate", function()
             local cursorX, cursorY = CursorInUISpace()
             if not cursorX or not cursorY then
                 return
             end
             local settings = GC.DB:GetSettings().minimap
+            if freeDrag then
+                settings.free = true
+                settings.x, settings.y = math.floor(cursorX), math.floor(cursorY)
+                GC.UI:PositionMinimapButton()
+                return
+            end
             local centerX, centerY = MinimapCenterInUISpace()
             if centerX and centerY then
                 local offsetX = cursorX - centerX
                 local offsetY = cursorY - centerY
-                if math.sqrt((offsetX * offsetX) + (offsetY * offsetY)) <= MINIMAP_FREE_DISTANCE then
-                    settings.free = false
-                    settings.angle = math.deg(MinimapAngle(offsetY, offsetX))
-                    GC.UI:PositionMinimapButton()
-                    return
+                settings.free = false
+                if offsetX ~= 0 or offsetY ~= 0 then
+                    local radiusX, radiusY = MinimapRadii()
+                    settings.angle = math.deg(MinimapAngle(offsetY / radiusY, offsetX / radiusX))
                 end
+                GC.UI:PositionMinimapButton()
             end
-            settings.free = true
-            settings.x = math.floor(cursorX)
-            settings.y = math.floor(cursorY)
-            GC.UI:PositionMinimapButton()
         end)
     end)
     button:SetScript("OnDragStop", function(self)
@@ -12703,12 +12769,14 @@ function GC.UI:AddMinimapButton()
     end)
 
     self.minimapButton = button
+    Minimap:HookScript("OnSizeChanged", function() GC.UI:PositionMinimapButton() end)
+    Minimap:HookScript("OnShow", function() GC.UI:PositionMinimapButton() end)
     self:RefreshMinimapButton()
     self:RefreshMinimapMarker()
 end
 
 -- Die Slash-Befehle an genau einer Stelle. Daraus entstehen die Ausgabe von
--- "/gcpf help" und die Liste auf der Addon-Optionsseite: Zwei getrennte
+-- "/gcp help" und die Liste auf der Addon-Optionsseite: Zwei getrennte
 -- Aufzaehlungen laufen auseinander, sobald ein Befehl dazukommt - und die
 -- Liste, die niemand pflegt, ist dann die falsche.
 -- === Sitzungsfrage beim Instanzbeitritt =====================================
@@ -13900,7 +13968,7 @@ GC:RegisterCallback("RAID_SUMMARY_ANSWERS", GC.UI, function(self)
 end)
 
 -- === Versionsprüfer =========================================================
--- /gcpf ver: Wer in Gruppe oder Gilde hat Guild Copilot Forever, und in welcher
+-- /gcp ver: Wer in Gruppe oder Gilde hat Guild Copilot, und in welcher
 -- Version? Grün ist der eigene Stand, rot ist älter, gelb wartet noch,
 -- "Nicht installiert" hat nach acht Sekunden nicht geantwortet.
 
@@ -14167,7 +14235,7 @@ function GC.UI:PrintSlashHelp()
     for _, entry in ipairs(SLASH_COMMANDS) do
         GC:Print("  |cffffffff" .. entry.command .. "|r – " .. entry.description)
     end
-    GC:Print("  |cff91a3b8/guildcopilotforever|r tut überall dasselbe wie |cff91a3b8/gcpf|r.")
+    GC:Print("  |cff91a3b8/guildcopilot|r tut überall dasselbe wie |cff91a3b8/gcp|r.")
 end
 
 function GC.UI:RegisterInterfaceOptions()
@@ -14176,7 +14244,7 @@ function GC.UI:RegisterInterfaceOptions()
     end
 
     local panel = CreateFrame("Frame")
-    panel.name = "Guild Copilot Forever"
+    panel.name = "Guild Copilot"
 
     local wordmark = panel:CreateTexture(nil, "ARTWORK")
     wordmark:SetSize(300, 300)
@@ -14190,7 +14258,7 @@ function GC.UI:RegisterInterfaceOptions()
         width = 300,
     })
     commandLabel:SetPoint("TOP", wordmark, "BOTTOM", 0, -8)
-    local command = CreateLabel(panel, "/gcpf", {
+    local command = CreateLabel(panel, "/gcp", {
         title = true,
         align = "CENTER",
         width = 300,
@@ -14215,7 +14283,7 @@ function GC.UI:RegisterInterfaceOptions()
         previous = row
     end
 
-    panel.openButton = CreateButton(panel, "Guild Copilot Forever öffnen", 220, 40, function()
+    panel.openButton = CreateButton(panel, "Guild Copilot öffnen", 220, 40, function()
         if InterfaceOptionsFrame and InterfaceOptionsFrame:IsShown() then
             if HideUIPanel then
                 HideUIPanel(InterfaceOptionsFrame)
@@ -14250,14 +14318,26 @@ function GC.UI:RegisterInterfaceOptions()
     self.optionsPanel = panel
 end
 
-SLASH_GUILDCOPILOTFOREVER1 = "/gcpf"
-SLASH_GUILDCOPILOTFOREVER2 = "/guildcopilotforever"
+SLASH_GUILDCOPILOTFOREVER1 = "/gcp"
+SLASH_GUILDCOPILOTFOREVER2 = "/guildcopilot"
 SlashCmdList.GUILDCOPILOTFOREVER = function(input)
     local command = GC.Util.Trim(tostring(input or "")):lower()
+    if command == "raidcheck" then
+        local _, message = GC.RaidPreparation:Capture()
+        GC:Print(message)
+        GC.UI:CreateMainFrame()
+        GC.UI.frame:Show()
+        GC.UI:ShowPage("STATISTICS")
+        return
+    end
     if command == "client" then
         GC:Print(GC.Client.label .. " | " .. tostring(GC.Client.version) .. "." .. tostring(GC.Client.build)
             .. " | Interface " .. tostring(GC.Client.interface) .. " | Addon " .. GC.Constants.VERSION)
         GC:Print("Daten: " .. GC.Client.savedVariable .. " | Sync: " .. GC.Constants.COMM_PREFIX)
+        GC:Print("Charakter: " .. GC:GetPlayerFullName())
+        local spec, signature = GC.Profile:DetectTalentSpec()
+        GC:Print("Talente: " .. (signature or "derzeit nicht lesbar") .. " | Zuordnung: " .. (spec or "nicht eindeutig"))
+        GC:Print("Die Übersicht zeigt alle Stufen aus den ausgewählten Raider-Rängen.")
         if not GC.Client.combatAnalysis then GC:Print(GC.Client.combatAnalysisReason) end
         return
     end
@@ -14282,24 +14362,24 @@ SlashCmdList.GUILDCOPILOTFOREVER = function(input)
 
     -- Ob ein Ruckler vom Addon kommt, laesst sich nur messen. Standardmaessig
     -- ist die Messung aus; wer sie einschaltet, spielt eine Weile und ruft
-    -- "/gcpf debug" erneut auf, bekommt die schlimmsten Einzelmessungen.
+    -- "/gcp debug" erneut auf, bekommt die schlimmsten Einzelmessungen.
     if command == "debug" then
         if GC.Perf.enabled then
             for _, line in ipairs(GC.Perf:Report()) do
                 GC:Print(line)
             end
             GC.Perf.enabled = false
-            GC:Print("Messung beendet. Erneut einschalten mit /gcpf debug.")
+            GC:Print("Messung beendet. Erneut einschalten mit /gcp debug.")
         else
             GC.Perf:Reset()
             GC.Perf.enabled = true
-            GC:Print("Messung läuft. Spiel eine Weile weiter und ruf /gcpf debug erneut auf.")
+            GC:Print("Messung läuft. Spiel eine Weile weiter und ruf /gcp debug erneut auf.")
         end
         return
     end
 
     -- Der Versionsprüfer: Wer in Gruppe oder Gilde hat das Addon, und in
-    -- welcher Version? ("/gcpf phase" ist auf Owner-Wunsch entfallen; die
+    -- welcher Version? ("/gcp phase" ist auf Owner-Wunsch entfallen; die
     -- Content-Phase läuft intern mit ihrer Voreinstellung und dem
     -- Gildenabgleich weiter.)
     if command == "ver" or command == "version" then
