@@ -170,7 +170,7 @@ local GUILD_DEFAULTS = {
     profile = {
         description = "",
         raidTimes = "",
-        progress = "SSC/TK",
+        progress = "",
         lootSystem = "",
         discord = "",
         contact = "",
@@ -406,6 +406,11 @@ function GC.DB:GetGuild()
     end
 
     local guildData = GC.Util.MergeDefaults(self.data.guilds[guildKey], GUILD_DEFAULTS)
+    -- Remove only beta.1's untouched default; preserve edited guild profiles.
+    if GC.Client.isForever and guildData.profile.progress == "SSC/TK"
+        and (tonumber(guildData.profile.updatedAt) or 0) == 0 then
+        guildData.profile.progress = ""
+    end
     self.data.guilds[guildKey] = guildData
     self.guildCacheKey = guildKey
     self.guildCache = guildData

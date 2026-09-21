@@ -9,6 +9,12 @@ local function check(value, message)
     assert(value, message)
 end
 function GetBuildInfo() return "1.60.1", "69913", "Sep 18 2026", 16001 end
+Constants = {
+    CharacterNameSeparatorConsts = { CHARACTERNAME_SURNAME_SEPARATOR = "-" },
+    TraitConsts = { INSPECT_TRAIT_CONFIG_ID = -1 },
+}
+function UnitLevel() return 20 end
+function UnitNameUnmodified(unit) return UnitFullName(unit) end
 local secret = {}
 function issecretvalue(value) return rawequal(value, secret) end
 local errors = {}
@@ -55,17 +61,35 @@ C_SkillInfo = {
     end,
 }
 GetNumSkillLines, GetSkillLineInfo, ExpandSkillHeader, CollapseSkillHeader = nil, nil, nil, nil
-GetProfessions, GetProfessionInfo, GetTalentTabInfo = nil, nil, nil
-local talentPoints = { 0, 31, 0 }
-C_SpecializationInfo = { GetSpecializationInfo = function(index, inspect)
-    return index, "Talent", "", 1, "DAMAGER", 1, talentPoints[index]
-end }
+GetTalentTabInfo = nil
+local talentPoints = { 0, 11, 0 }
+local inspectValid, stagedTalents = true, false
+C_SpecializationInfo = {
+    GetActiveSpecGroup = function() return 1 end,
+    GetCombatConfigIDForSpecGroup = function(group) return group == 1 and 101 or 102 end,
+    GetSpecializationInfo = function() error("Not a Forever talent-tab reader") end,
+}
+C_Traits = {
+    HasValidInspectData = function() return inspectValid end,
+    ConfigHasStagedChanges = function() return stagedTalents end,
+    GetConfigInfo = function(id) return { treeIDs = { 900 } } end,
+    -- Shuffled deliberately: display order and returned currency order differ.
+    GetGroupDisplayInfoByTreeID = function() return {
+        { groupID = 30, orderIndex = 2 }, { groupID = 10, orderIndex = 0 }, { groupID = 20, orderIndex = 1 },
+    } end,
+    GetGroupCurrencyInfo = function() return {
+        { traitNodeGroupID = 20, currencyInfos = { { spent = talentPoints[2] } } },
+        { traitNodeGroupID = 30, currencyInfos = { { spent = talentPoints[3] } } },
+        { traitNodeGroupID = 10, currencyInfos = { { spent = talentPoints[1] } } },
+    } end,
+}
 -- Removed public legacy APIs must not accidentally keep the test working.
 CombatLogGetCurrentEventInfo = nil
 GetTradeSkillLine, GetNumTradeSkills, GetTradeSkillInfo = nil, nil, nil
 GetCraftInfo, GetNumCrafts, GetCraftSkillLine, GetCraftDisplaySkillLine = nil, nil, nil, nil
 local crafted
 C_TradeSkillUI = {
+    GetProfessionInfoBySkillLineID = function(id) return { skillLevel = 75, maxSkillLevel = 150 } end,
     IsTradeSkillReady = function() return true end,
     GetBaseProfessionInfo = function() return { professionName = "Tailoring", skillLevel = 100, maxSkillLevel = 150 } end,
     GetAllRecipeIDs = function() return { 2963, 999999 } end,
@@ -102,9 +126,33 @@ check(addon.DB.data.settings.window.alpha == 73, "Existing Forever settings lost
 check(addon.Constants.COMM_PREFIX == "GCPForever", "Shared TBC communication prefix")
 check(GuildCopilotForever == addon and GuildCopilot == nil, "TBC addon namespace overwritten")
 check(SLASH_GUILDCOPILOTFOREVER1 == "/gcpf" and SlashCmdList.GUILDCOPILOT == nil, "TBC slash command overwritten")
-check(addon.Util.PlayerKey("Same-RealmOne") ~= addon.Util.PlayerKey("Same-RealmTwo"), "Cross-realm identities collide")
-check(addon.Util.PlayerKey("Tester") == addon.Util.PlayerKey("Tester-Realm"), "Local realm name not canonical")
-check(addon.Roster:GetProfile("Tester") == addon.Profile:Get(), "Own short-name profile lookup failed")
+check(addon.Util.PlayerKey("Same-FamilyOne") ~= addon.Util.PlayerKey("Same-FamilyTwo"), "Surnames collide")
+check(addon.Util.PlayerKey("Tester") ~= addon.Util.PlayerKey("Tester-Realm"), "Missing surname was invented")
+check(addon.Roster:GetProfile("Tester-Realm") == addon.Profile:Get(), "Own full-name profile lookup failed")
+check(addon.Roster:GetProfile("Tester") == nil, "First name matched a full identity")
+check(addon.Util.PlayerKey("Ana Bel") ~= addon.Util.PlayerKey("An Abel"), "Name boundaries discarded")
+check(addon.Chat:CanonicalLeadName("Tester") == "tester", "Inbox invented a surname")
+check(addon.DB:GetGuild().profile.progress == "", "TBC progress default leaked into Forever")
+do
+    local guild = addon.DB:GetGuild()
+    guild.profile.progress, guild.profile.updatedAt = "SSC/TK", 0
+    addon.DB.guildCache = nil
+    check(addon.DB:GetGuild().profile.progress == "", "Untouched beta.1 progress not migrated")
+    guild.profile.progress, guild.profile.updatedAt = "Eigener Fortschritt", 1
+    addon.DB.guildCache = nil
+    check(addon.DB:GetGuild().profile.progress == "Eigener Fortschritt", "Edited progress overwritten")
+end
+check(not addon.Recruitment:GenerateReply("INFO", "Other-Family"):find("SSC/TK", 1, true), "TBC progress in reply")
+do
+    local separator = Constants.CharacterNameSeparatorConsts.CHARACTERNAME_SURNAME_SEPARATOR
+    Constants.CharacterNameSeparatorConsts.CHARACTERNAME_SURNAME_SEPARATOR = " "
+    check(addon.Util.JoinPlayerName("Ana", "Forever") == "Ana Forever", "Client name separator ignored")
+    check(addon.Util.JoinPlayerName("Ana Forever", "Forever") == "Ana Forever", "Surname doubled")
+    check(addon.Util.JoinPlayerName(secret, "Forever") == nil, "Secret name evaluated")
+    Constants.CharacterNameSeparatorConsts.CHARACTERNAME_SURNAME_SEPARATOR = nil
+    check(addon.Util.JoinPlayerName("Ana", "Forever") == nil, "Missing separator guessed")
+    Constants.CharacterNameSeparatorConsts.CHARACTERNAME_SURNAME_SEPARATOR = separator
+end
 do
     local fullName = UnitFullName
     UnitFullName = function(unit) return "Same", unit == "party1" and "RealmOne" or "RealmTwo" end
@@ -123,14 +171,33 @@ check(addon.API.GetSpellInfo(2963) == "Spell 2963", "SpellInfo table not adapted
 check(addon.API.GetItemInfo(14048) == "Runenstoffballen", "Namespaced item API not used")
 addon.Profile:RefreshProfessions()
 local profile = addon.Profile:Get()
-check(profile.professionSource == "OK", "Namespaced skills not detected")
+check(profile.professionSource == "OK" and profile.professions[1].skillLevel == 75,
+    "Forever profession book rank not detected")
 check(not skillHeaderExpanded, "Skill header was not restored")
+do
+    local getProfessions, getProfessionInfo = GetProfessions, GetProfessionInfo
+    GetProfessions, GetProfessionInfo = nil, nil
+    addon.Profile:RefreshProfessions()
+    check(profile.professionSource == "OK" and not skillHeaderExpanded, "Skill-line fallback failed")
+    GetProfessions, GetProfessionInfo = getProfessions, getProfessionInfo
+    addon.Profile:RefreshProfessions()
+end
 local spec, signature = addon.Profile:DetectTalentSpec()
-check(spec ~= nil and signature == "0/31/0", "Modern talent points not detected")
+check(spec == "HUNTER:2" and signature == "0/11/0", "Forever group talent points not detected")
 check(addon.Profile:DetectTalentSpecForUnit("player") ~= nil, "Modern inspect talent points not detected")
+check(addon.Profile:DetectTalentSpecForUnit("party1") == "HUNTER:2", "Low-level inspected talents rejected")
+inspectValid = false
+check(addon.Profile:DetectTalentSpecForUnit("party1") == nil, "Invalid inspect data accepted")
+inspectValid = true
+stagedTalents = true
+check(addon.Profile:DetectTalentSpec() == nil, "Uncommitted talents published")
+stagedTalents = false
 talentPoints[2] = secret
 check(addon.Profile:DetectTalentSpec() == nil, "Secret talent data evaluated")
-talentPoints[2] = 31
+talentPoints[2] = 11
+talentPoints[1] = 11
+check(addon.Profile:DetectTalentSpec() == nil, "Tied build guessed as one spec")
+talentPoints[1] = 0
 check(addon.Workshop:ScanOpenProfession(), "Modern profession scan failed")
 local profession = addon.Workshop:GetOwnProfession("Tailoring")
 local recipe = profession and profession.recipes.I2996
@@ -139,6 +206,66 @@ check(recipe.reagents[1].itemID == 2589 and recipe.reagents[1].count == 2, "Mode
 local count = 0
 for _ in pairs(profession.recipes) do count = count + 1 end
 check(count == 1, "Unlearned recipe stored")
+do
+    -- UTF-8 first/surnames can exceed a display-oriented byte budget.
+    local crafter = "Éléonorianne-ÉléonorianneÉléonorianne"
+    check(#crafter > 40 and #crafter <= 96, "Long identity fixture is not long")
+    for _, builder in ipairs({ addon.Workshop.BuildProfessionMessages, function(self, data, compact, name)
+        return self:BuildKeyListMessages(data, name)
+    end }) do
+        local messages = builder(addon.Workshop, profession, true, crafter)
+        check(#messages > 0, "Long identity transfer empty")
+        for _, message in ipairs(messages) do
+            local fields = addon.Util.SplitFields(message)
+            check(fields[12] == crafter and #message <= 255, "Identity truncated or packet oversized")
+            addon.Workshop:ReceiveSync(fields, "Relay-Family", "GUILD")
+        end
+        local received = addon.Workshop:GetGuildWorkshop().crafters[addon.Util.PlayerKey(crafter)]
+        check(received and received.name == crafter, "Crafter identity lost on receipt")
+    end
+    local oversized = addon.Util.DeepCopy(profession)
+    oversized.name = string.rep("x", 300)
+    check(#addon.Workshop:BuildKeyListMessages(oversized, crafter) == 0, "Invalid payload budget not rejected")
+    local cooldowns = {}
+    local longName = string.rep("a", 47) .. "-" .. string.rep("b", 48)
+    for index = 1, 20 do
+        cooldowns[index] = { key = "I123456" .. index, readyAt = addon.Util.Now() + 3600 }
+    end
+    local messages = addon.Workshop:BuildCooldownMessages(longName, cooldowns)
+    check(#messages > 1, "Long-name cooldowns were not split")
+    for _, message in ipairs(messages) do
+        check(#message <= 255, "Cooldown packet oversized")
+        addon.Workshop:ReceiveSync(addon.Util.SplitFields(message), "Relay-Family", "GUILD")
+    end
+    local stored = addon.Workshop:GetGuildWorkshop().crafters[addon.Util.PlayerKey(longName)]
+    local receivedCount = 0
+    for _ in pairs(stored and stored.cooldowns or {}) do receivedCount = receivedCount + 1 end
+    check(receivedCount == 20, "Cooldown entries lost in transport")
+    local large = addon.Util.DeepCopy(profession)
+    large.updatedAt = addon.Util.Now() + 1
+    large.fingerprint, large.fingerprintHash = nil, nil
+    large.recipes = { I987654 = { key = "I987654", itemID = 987654, name = "Large recipe", reagents = {} } }
+    for index = 1, 25 do
+        large.recipes.I987654.reagents[index] = { itemID = 987000 + index, count = index }
+    end
+    for _, compact in ipairs({ true, false }) do
+        addon.Workshop:GetGuildWorkshop().catalog.I987654 = nil
+        local packets = addon.Workshop:BuildProfessionMessages(large, compact, longName)
+        check(#packets > 1, "Large recipe did not span packets")
+        for index = #packets, 1, -1 do
+            check(#packets[index] <= 255, "Large recipe packet oversized")
+            addon.Workshop:ReceiveSync(addon.Util.SplitFields(packets[index]), "Relay-Family", "GUILD")
+        end
+        local recipe = addon.Workshop:GetGuildWorkshop().catalog.I987654
+        check(recipe and #recipe.reagents == 25 and recipe.reagents[25].count == 25,
+            "Recipe transport silently discarded materials")
+    end
+    addon.Workshop:ReceiveSync({ "W", tostring(addon.Constants.SCHEMA_VERSION), "C", "legacy-fixture",
+        "1", "1", "tailoring", "Schneiderei", "I987655,,2589:2", tostring(addon.Util.Now()), "1", longName },
+        "Relay-Family", "GUILD")
+    local legacyRecipe = addon.Workshop:GetGuildWorkshop().catalog.I987655
+    check(legacyRecipe and legacyRecipe.reagents[1].count == 2, "Legacy recipe packet stopped working")
+end
 local orderOK, orderMessage = addon.Orders:Create("I2996", { quantity = 2, materialModel = "A" })
 check(orderOK, "Crafting order failed: " .. tostring(orderMessage))
 -- Long realm-qualified identities must survive reservation and packet round trips.
@@ -176,6 +303,13 @@ do
 end
 addon.Workshop:CraftOpenRecipe("I2996", 2)
 check(crafted and crafted[1] == 2963 and crafted[2] == 2, "Modern crafting not used")
+do
+    local craft = C_TradeSkillUI.CraftRecipe
+    C_TradeSkillUI.CraftRecipe = function() error("Client rejected craft") end
+    local ok, message = addon.Workshop:CraftOpenRecipe("I2996", 1)
+    check(ok == false and message:find("abgewiesen", 1, true), "Failed craft reported success")
+    C_TradeSkillUI.CraftRecipe = craft
+end
 addon.Inventory:ScanBags()
 check(addon.Inventory:GetOwnStore().bags.counts[22445] == 20, "Namespaced bag contents lost")
 local scans = 0
@@ -198,6 +332,22 @@ check(addon.UI.pages.WCL == nil, "TBC logs page visible")
 check(addon.UI.pages.STATISTICS.sessionButton == nil, "Unavailable analysis button visible")
 check(#errors == 0, "UI callback failed: " .. table.concat(errors, "; "))
 check(addon.Sync:AnnounceVersion(false, 0), "Version handshake not sent")
+do
+    local before = #sentAddon
+    local throttle = _G.ChatThrottleLib
+    _G.ChatThrottleLib = { SendAddonMessage = function() error("Restricted CTL dispatch attempted") end }
+    C_ChatInfo.AreOutgoingAddonChatMessagesRestricted = function() return true end
+    check(not addon.Sync:Send("test", "GUILD") and #sentAddon == before, "Restricted addon send attempted")
+    local completed
+    check(addon.Sync:SendBulk("restricted-queue-test", "GUILD", nil, function(ok) completed = ok end),
+        "Restricted packet could not be queued")
+    for _ = 1, 12 do addon.Sync:PumpBulk(5) end
+    check(completed == nil and #sentAddon == before, "Restricted queue lost or dispatched a packet")
+    _G.ChatThrottleLib = throttle
+    C_ChatInfo.AreOutgoingAddonChatMessagesRestricted = nil
+    addon.Sync:PumpBulk(5)
+    check(completed == true, "Paused packet did not resume")
+end
 addon.Sync:SendProfile()
 check(#sentAddon >= 2, "Sync checks did not exercise actual sends")
 local wireProfile = addon.Sync:BuildProfileMessage()

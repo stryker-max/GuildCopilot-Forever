@@ -23,7 +23,7 @@ local MAX_LOG_ENTRIES = 12
 local MAX_NOTE_BYTES = 48
 local MAX_NAME_BYTES = 30
 -- Character identities include the realm; recipe labels keep their own limit.
-local MAX_PLAYER_NAME_BYTES = 96
+local MAX_PLAYER_NAME_BYTES = GC.Constants.MAX_PLAYER_NAME_BYTES
 local MIN_ANSWER_INTERVAL = 30
 -- Ein gerichteter Auftrag ("Wunsch-Hersteller") ist so lange reserviert,
 -- danach offen fuer alle. Die Frist wird nie gesendet - jeder Client rechnet

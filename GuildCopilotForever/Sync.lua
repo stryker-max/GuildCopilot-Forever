@@ -85,6 +85,14 @@ local function InCombat()
     return type(UnitAffectingCombat) == "function" and UnitAffectingCombat("player") == true
 end
 
+local function OutgoingRestricted()
+    local query = C_ChatInfo and C_ChatInfo.AreOutgoingAddonChatMessagesRestricted
+    if type(query) ~= "function" then return false end
+    local ok, restricted = pcall(query)
+    if not ok or GC.Client.IsSecret(restricted) then return true end
+    return restricted == true
+end
+
 local RELIABLE_WINDOW = 4
 local RELIABLE_RETRY_DELAY = 1.5
 -- Der Whisper-Transfer teilt sich das Kanalbudget mit ChatThrottleLib und dem
@@ -540,6 +548,7 @@ end
 
 function GC.Sync:Send(payload, distribution, target)
     distribution = distribution or "GUILD"
+    if OutgoingRestricted() then return false end
     if not payload or #payload > GC.Constants.MAX_CHAT_BYTES then
         return false
     end
@@ -745,6 +754,10 @@ local function PumpBulkOnce(self, elapsed)
         return
     end
     self.bulkCombatAt = nil
+
+    -- Keep the queue intact while the client forbids addon messages. Unlike
+    -- combat, this state need not end with PLAYER_REGEN_ENABLED; keep polling.
+    if #self.bulkQueue > 0 and OutgoingRestricted() then return end
 
     -- Bei ChatThrottleLib liegt immer hoechstens EIN Paket.
     --
@@ -1041,7 +1054,7 @@ function GC.Sync:GetSyncStatus()
 
     -- Im Kampf steht die Warteschlange absichtlich. Das ist keine Stoerung und
     -- gehoert auch nicht als solche angezeigt.
-    status.paused = #self.bulkQueue > 0 and InCombat() or false
+    status.paused = #self.bulkQueue > 0 and (InCombat() or OutgoingRestricted()) or false
 
     -- Was nachweislich noch bei uns oder bei ChatThrottleLib liegt, ist nicht
     -- verloren. Beides zusammen: ein uebergebenes Paket (bulkInFlight) und

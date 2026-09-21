@@ -1,5 +1,13 @@
 # Guild Copilot Forever – Entwicklung
 
+## 0.1.0-beta.2: Abgleich mit dem Forever-Client
+
+Große Rezepte behalten ihre vollständigen Reagenzienlisten durch zusammengesetzte FD/FC-Transfers. Rezeptabgleiche erfordern beta.2 auf beiden Seiten; alte C/D-Transfers werden weiterhin gelesen. Der unberührte beta.1-Gildenfortschrittswert wird beim Laden korrigiert, bearbeitete Gildenprofile bleiben erhalten.
+
+Die erste Portierung enthielt noch unzutreffende Annahmen über Realmnamen und Talentabfragen. Der aktuelle Stand verwendet das zweiteilige Forever-Namensmodell und das öffentliche `C_Traits`-Gruppenmodell aus Blizzards `Camelot`-UI. Berufs-Hauptpfad, Fehler bei der Herstellung, lange Sync-Identitäten, Paketgrößen, Client-Sendesperren und der TBC-Gildenfortschrittswert sind korrigiert. Die Diagnose erklärt die weiterhin auf Level 60 gefilterte Raiderliste. Die [Quellenbasis](docs/FOREVER-GRUNDLAGE.md) und [Spielabnahme](docs/BETA-ABNAHME.md) beschreiben den aktuellen Zielstand.
+
+Die Vertragsprüfungen laufen gegen Quelle und entpacktes Paket. Die tatsächliche Namensdarstellung, Mehrspieler-Kommunikation, Rezeptausbeute und Persistenz nach Neustart bleiben Teil der Abnahme im laufenden Beta-Client. Ein erfolgreicher Offline-Test ist dafür keine Freigabe. Die nachstehenden Angaben zu Talentabfragen und Realmanteilen dokumentieren den ursprünglichen Stand beta.1; sie sind durch beta.2 ersetzt.
+
 ## 0.1.0-beta.1: eigenständige Beta-Portierung
 
 Ausgangsstand: TBC 0.9.142, Commit `71e650473b90e7d39ae4b814678ce64abe8c694a`. Der lokale Forever-Client und die dazugehörigen Blizzard-UI-Quellen melden `1.60.1.69913`. Der API-Abgleich basiert auf dem Quellstand `70ef1b2fd78061a73f886c4a1e79dc5b5cff6d5e` des UI-Mirrors.

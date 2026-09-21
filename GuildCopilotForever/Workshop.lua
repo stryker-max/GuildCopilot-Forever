@@ -24,7 +24,6 @@ GC.Workshop = {
 
 local MAX_PAYLOAD_BYTES = 180
 local LEGACY_MAX_PAYLOAD_BYTES = 170
-local MAX_RECORD_BYTES = 165
 local MAX_TRANSFER_PARTS = 300
 -- Die Grenze schuetzt vor Speicherfrass durch Muellpakete, nicht vor der
 -- eigenen Gilde - und stand mit 20 weit unter dem, was ein Login ausloest.
@@ -318,8 +317,7 @@ local function RecipeKeyCount(profession)
     return count
 end
 
-local function BuildRecipeRecord(recipe, recordLimit)
-    recordLimit = math.min(MAX_RECORD_BYTES, tonumber(recordLimit) or MAX_RECORD_BYTES)
+local function BuildRecipeRecord(recipe)
     local reagentTokens = {}
     for _, reagent in ipairs(recipe.reagents or {}) do
         if tonumber(reagent.itemID) then
@@ -337,25 +335,11 @@ local function BuildRecipeRecord(recipe, recordLimit)
         }, ",")
     end
 
-    local record = Compose()
-    while #record > recordLimit and #reagentTokens > 0 do
-        table.remove(reagentTokens)
-        record = Compose()
-    end
-    while #record > recordLimit and #name > 8 do
-        name = GC.Util.SafeChatText(name, #name - 4)
-        record = Compose()
-    end
-    if #record > recordLimit then
-        name = ""
-        record = Compose()
-    end
-    return #record <= recordLimit and record or nil
+    return Compose()
 end
 
-local function BuildCompactRecipeRecord(recipe, recordLimit)
-    recordLimit = math.min(MAX_RECORD_BYTES, tonumber(recordLimit) or MAX_RECORD_BYTES)
-    local recipeKey = GC.Util.SafeChatText(tostring(recipe.key or ""), 36)
+local function BuildCompactRecipeRecord(recipe)
+    local recipeKey = tostring(recipe.key or "")
     if recipeKey == "" then
         return nil
     end
@@ -378,20 +362,7 @@ local function BuildCompactRecipeRecord(recipe, recordLimit)
         return table.concat({ recipeKey, name, table.concat(reagentTokens, ".") }, ",")
     end
 
-    local record = Compose()
-    while #record > recordLimit and #reagentTokens > 0 do
-        table.remove(reagentTokens)
-        record = Compose()
-    end
-    while #record > recordLimit and #name > 8 do
-        name = GC.Util.SafeChatText(name, #name - 4)
-        record = Compose()
-    end
-    if #record > recordLimit then
-        name = ""
-        record = Compose()
-    end
-    return #record <= recordLimit and record or nil
+    return Compose()
 end
 
 local function BuildMessage(fields)
@@ -831,7 +802,7 @@ function GC.Workshop:SendMissingRecipeRequest(crafterName, recipeKeys)
         "W",
         GC.Constants.SCHEMA_VERSION,
         "N",
-        GC.Util.SafeChatText(GC.Util.Trim(crafterName), 40),
+        GC.Util.PlayerIdentityName(crafterName),
         EncodeRecipeKeys(wanted),
     })
     if #message > GC.Constants.MAX_CHAT_BYTES then
@@ -1323,7 +1294,7 @@ end
 -- Startet die Herstellung. Gibt Erfolg und eine Meldung zurueck; ausgeloest
 -- wird immer nur EIN Herstellbefehl, das Spiel wiederholt ihn selbst.
 function GC.Workshop:CraftOpenRecipe(recipeKey, count)
-    if type(InCombatLockdown) == "function" and InCombatLockdown() then
+    if GC.Client.InCombat() then
         return false, "Im Kampf wird nicht gefertigt."
     end
     if not self:GetOwnRecipe(recipeKey) then
@@ -1335,18 +1306,22 @@ function GC.Workshop:CraftOpenRecipe(recipeKey, count)
     end
     count = math.max(1, math.min(40, math.floor(tonumber(count) or 1)))
 
+    local succeeded
     if found.kind == "MODERN" and C_TradeSkillUI
         and type(C_TradeSkillUI.CraftRecipe) == "function" then
-        SafeAPICall(C_TradeSkillUI.CraftRecipe, found.recipeID, count)
+        succeeded = pcall(C_TradeSkillUI.CraftRecipe, found.recipeID, count)
     elseif found.kind == "CRAFT" and type(DoCraft) == "function" then
         -- Die Craft-API (Verzauberkunst in TBC) kennt keine Wiederholung:
         -- ein Aufruf, ein Stueck.
-        SafeAPICall(DoCraft, found.index)
+        succeeded = pcall(DoCraft, found.index)
         count = 1
     elseif found.kind == "CLASSIC" and type(DoTradeSkill) == "function" then
-        SafeAPICall(DoTradeSkill, found.index, count)
+        succeeded = pcall(DoTradeSkill, found.index, count)
     else
         return false, "Diese Spielfassung kennt keinen Herstellbefehl für das Rezept."
+    end
+    if not succeeded then
+        return false, "Der Client hat die Herstellung abgewiesen. Bitte im Berufsfenster prüfen."
     end
     return true, count == 1 and ("„" .. (found.name or "?") .. "“ wird hergestellt.")
         or ("„" .. (found.name or "?") .. "“ wird " .. count .. "× hergestellt.")
@@ -1356,13 +1331,15 @@ end
 -- werden nachgeforderte Rezepte gezielt nachgeliefert, statt den ganzen Beruf
 -- erneut zu senden.
 function GC.Workshop:BuildProfessionMessages(profession, compact, crafterName, recipeKeyFilter)
-    local operation = compact == false and "D" or "C"
+    -- FD/FC carry a byte stream; beta.1 ignores these operations instead of
+    -- interpreting a partial recipe as a complete (wrong) material list.
+    local operation = compact == false and "FD" or "FC"
     local token = tostring(GC.Util.Now()) .. tostring(math.random(100, 999))
     -- Der Herstellername wird als zusaetzliches Feld angehaengt, damit auch die
     -- Berufe der eigenen Twinks korrekt dem jeweiligen Charakter zugeordnet
     -- werden. Aeltere Clients ignorieren das Feld schlicht und schreiben die
     -- Daten wie bisher dem Absender zu.
-    local crafterField = GC.Util.SafeChatText(GC.Util.Trim(crafterName or ""), 40)
+    local crafterField = GC.Util.PlayerIdentityName(crafterName)
     local fingerprintHash = profession.fingerprintHash
         or FingerprintHash(profession.fingerprint or RecipeFingerprint(profession))
 
@@ -1391,13 +1368,14 @@ function GC.Workshop:BuildProfessionMessages(profession, compact, crafterName, r
         GC.Constants.MAX_CHAT_BYTES - #header
     )
 
+    if payloadLimit < 1 then return {}, token end
     local records = {}
     for _, recipeKey in ipairs(SortedKeys(profession.recipes)) do
         if not recipeKeyFilter or recipeKeyFilter[recipeKey] then
             local recipe = profession.recipes[recipeKey]
             local record = compact == false
-                and BuildRecipeRecord(recipe, payloadLimit)
-                or BuildCompactRecipeRecord(recipe, payloadLimit)
+                and BuildRecipeRecord(recipe)
+                or BuildCompactRecipeRecord(recipe)
             if record then
                 records[#records + 1] = record
             end
@@ -1408,17 +1386,19 @@ function GC.Workshop:BuildProfessionMessages(profession, compact, crafterName, r
     end
 
     local payloads = {}
-    local current = ""
-    for _, record in ipairs(records) do
-        local candidate = current == "" and record or (current .. ";" .. record)
-        if #candidate > payloadLimit and current ~= "" then
-            payloads[#payloads + 1] = current
-            current = record
-        else
-            current = candidate
-        end
+    local stream = table.concat(records, ";")
+    local offset = 1
+    repeat
+        local chunk = stream:sub(offset, offset + payloadLimit - 1)
+        -- Percent/pipe/newline escaping also consumes wire bytes.
+        while #GC.Util.EscapeField(chunk) > payloadLimit do chunk = chunk:sub(1, -2) end
+        if chunk == "" and offset <= #stream then return {}, token end
+        payloads[#payloads + 1] = chunk
+        offset = offset + #chunk
+    until offset > #stream
+    if #payloads > MAX_TRANSFER_PARTS then
+        return {}, token
     end
-    payloads[#payloads + 1] = current
 
     local messages = {}
     for index, payload in ipairs(payloads) do
@@ -1445,7 +1425,7 @@ end
 -- wie ein voller Transfer - nur die Nutzlast ist eine andere.
 function GC.Workshop:BuildKeyListMessages(profession, crafterName)
     local token = tostring(GC.Util.Now()) .. tostring(math.random(100, 999))
-    local crafterField = GC.Util.SafeChatText(GC.Util.Trim(crafterName or ""), 40)
+    local crafterField = GC.Util.PlayerIdentityName(crafterName)
     local fingerprintHash = profession.fingerprintHash
         or FingerprintHash(profession.fingerprint or RecipeFingerprint(profession))
     local header = BuildMessage({
@@ -1457,6 +1437,8 @@ function GC.Workshop:BuildKeyListMessages(profession, crafterName)
         MAX_PAYLOAD_BYTES,
         GC.Constants.MAX_CHAT_BYTES - #header
     )
+
+    if payloadLimit < 1 then return {}, token end
 
     -- Eigene Berufe fuehren volle Rezepte, der Herstellerindex nur die
     -- Schluesselmenge - fuer die Liste ist beides dasselbe. So kann auch ein
@@ -2062,29 +2044,33 @@ end
 function GC.Workshop:BuildCooldownMessages(crafterName, entries)
     local messages = {}
     local now = GC.Util.Now()
-    local crafterField = GC.Util.SafeChatText(GC.Util.Trim(crafterName or ""), 40)
+    local crafterField = GC.Util.PlayerIdentityName(crafterName)
     local batch = {}
+
+    local function Packet()
+        return BuildMessage({ "W", GC.Constants.SCHEMA_VERSION, "CD", crafterField, EncodeCooldowns(batch, now) })
+    end
 
     local function Flush()
         if #batch == 0 then
             return
         end
         local payload = EncodeCooldowns(batch, now)
+        local message = Packet()
         batch = {}
-        if payload == "" then
+        if payload == "" or #message > GC.Constants.MAX_CHAT_BYTES then
             return
         end
-        messages[#messages + 1] = BuildMessage({
-            "W",
-            GC.Constants.SCHEMA_VERSION,
-            "CD",
-            crafterField,
-            payload,
-        })
+        messages[#messages + 1] = message
     end
 
     for _, entry in ipairs(entries or {}) do
         batch[#batch + 1] = entry
+        if #Packet() > GC.Constants.MAX_CHAT_BYTES and #batch > 1 then
+            table.remove(batch)
+            Flush()
+            batch[#batch + 1] = entry
+        end
         if #batch >= MAX_COOLDOWNS_PER_MESSAGE then
             Flush()
         end
@@ -2795,14 +2781,14 @@ function GC.Workshop:SendKeyListRequest(wanted)
             "W",
             GC.Constants.SCHEMA_VERSION,
             "KR",
-            GC.Util.SafeChatText(GC.Util.Trim(group.crafter), 40),
+            GC.Util.PlayerIdentityName(group.crafter),
             table.concat(group.keys, ","),
         }
         -- Das sechste Feld adressiert einen Boten: Der Genannte antwortet aus
         -- seinem Herstellerindex, alle anderen schweigen. Aeltere Clients
         -- lesen das Feld nicht - sie antworten wie bisher nur als Besitzer.
         if group.relayTarget ~= "" then
-            fields[6] = GC.Util.SafeChatText(group.relayTarget, 40)
+            fields[6] = GC.Util.PlayerIdentityName(group.relayTarget)
         end
         local message = BuildMessage(fields)
         if #message <= GC.Constants.MAX_CHAT_BYTES then
@@ -3080,7 +3066,7 @@ function GC.Workshop:ReceiveSync(fields, sender, distribution)
             local updatedAt = tonumber(updatedText)
             local recipeCount = tonumber(countText)
             if crafter and professionKey and updatedAt and recipeCount
-                and #crafter <= 60 and #professionKey <= 80 and #fingerprint <= 20 then
+                and #crafter <= GC.Constants.MAX_PLAYER_NAME_BYTES and #professionKey <= 80 and #fingerprint <= 20 then
                 local known = crafters[GC.Util.PlayerKey(crafter)]
                 -- Verglichen und vorgemerkt wird kanonisch; die Nachfrage beim
                 -- Absender traegt dessen eigenen Schluessel (requestKey), denn
@@ -3141,7 +3127,7 @@ function GC.Workshop:ReceiveSync(fields, sender, distribution)
                 record:match("^([^,]+),([^,]+),(%d+),(%d+),(%d+)$")
             local updatedAt = tonumber(updatedText)
             if crafter and professionKey and updatedAt and tonumber(countText)
-                and #crafter <= 60 and #professionKey <= 80 and #fingerprint <= 20 then
+                and #crafter <= GC.Constants.MAX_PLAYER_NAME_BYTES and #professionKey <= 80 and #fingerprint <= 20 then
                 if self:NoteCoverageGap({
                     crafter = crafter,
                     professionKey = professionKey,
@@ -3261,12 +3247,13 @@ function GC.Workshop:ReceiveSync(fields, sender, distribution)
         -- Wartezeiten. Feld 4 nennt den Charakter, dem sie gehoeren - ein
         -- Spieler meldet auch die seiner Twinks, genau wie bei den Rezepten.
         local crafterName = GC.Util.Trim(fields[4] or "")
-        if crafterName == "" or #crafterName > 60 then
-            crafterName = sender
-        end
+        if crafterName == "" then crafterName = sender end
+        if #crafterName > GC.Constants.MAX_PLAYER_NAME_BYTES then return end
         self:StoreCrafterCooldowns(crafterName, DecodeCooldowns(fields[5], GC.Util.Now()), sender)
         return
     end
+    local stream = operation == "FD" or operation == "FC"
+    if stream then operation = operation == "FD" and "D" or "C" end
     if operation ~= "D" and operation ~= "C" and operation ~= "K" then
         return
     end
@@ -3287,7 +3274,7 @@ function GC.Workshop:ReceiveSync(fields, sender, distribution)
         or total > MAX_TRANSFER_PARTS
         or #token > 40 or #professionKey > 80 or #professionName > 80
         or #payload > MAX_PAYLOAD_BYTES
-        or #fingerprintHash > 20 or #craftedBy > 60
+        or #fingerprintHash > 20 or #craftedBy > GC.Constants.MAX_PLAYER_NAME_BYTES
         or professionKey == "" or professionName == "" then
         return
     end
@@ -3344,6 +3331,7 @@ function GC.Workshop:ReceiveSync(fields, sender, distribution)
         or incoming.professionKey ~= professionKey
         or incoming.professionName ~= professionName
         or incoming.operation ~= operation
+        or incoming.stream ~= stream
         or incoming.updatedAt ~= updatedAt
         or incoming.fingerprintHash ~= fingerprintHash) then
         self.incoming[incomingKey] = nil
@@ -3376,6 +3364,7 @@ function GC.Workshop:ReceiveSync(fields, sender, distribution)
             professionKey = professionKey,
             professionName = professionName,
             operation = operation,
+            stream = stream,
             updatedAt = updatedAt,
             fingerprintHash = fingerprintHash,
             receivedAt = now,
@@ -3415,18 +3404,18 @@ function GC.Workshop:ReceiveSync(fields, sender, distribution)
         -- Hersteller ab jetzt nachweislich kann - der Status soll sie nennen.
         receivedRecipeCount = #receivedKeys
     else
-        -- Rezeptpakete sind an Datensatzgrenzen geteilt, ohne das Trennzeichen
-        -- mitzunehmen. Sie werden deshalb Paket fuer Paket gelesen; ein
-        -- Zusammensetzen wuerde den letzten Datensatz eines Pakets mit dem
-        -- ersten des naechsten verschmelzen.
+        -- New transfers are assembled before parsing; legacy C/D packets
+        -- remain readable at their original record boundaries.
+        local parts = incoming.parts
+        if incoming.stream then parts = { table.concat(parts) } end
         --
         -- Das Verwerfen des Katalogindex haengt hier ausdruecklich am Ende und
         -- nicht am einzelnen Rezept: Ein voller Beruf bringt bis zu 300 Pakete
         -- mit hunderten Rezepten mit, und jedes einzelne warf bisher den Index
         -- weg.
         local catalogChanged = false
-        for partIndex = 1, incoming.total do
-            for record in tostring(incoming.parts[partIndex] or ""):gmatch("[^;]+") do
+        for _, payloadPart in ipairs(parts) do
+            for record in tostring(payloadPart):gmatch("[^;]+") do
                 local recipe = operation == "C"
                     and DecodeCompactRecipeRecord(record, professionName)
                     or DecodeRecipeRecord(record, professionName)

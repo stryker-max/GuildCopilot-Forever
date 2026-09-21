@@ -14258,6 +14258,10 @@ SlashCmdList.GUILDCOPILOTFOREVER = function(input)
         GC:Print(GC.Client.label .. " | " .. tostring(GC.Client.version) .. "." .. tostring(GC.Client.build)
             .. " | Interface " .. tostring(GC.Client.interface) .. " | Addon " .. GC.Constants.VERSION)
         GC:Print("Daten: " .. GC.Client.savedVariable .. " | Sync: " .. GC.Constants.COMM_PREFIX)
+        GC:Print("Charakter: " .. GC:GetPlayerFullName())
+        local spec, signature = GC.Profile:DetectTalentSpec()
+        GC:Print("Talente: " .. (signature or "derzeit nicht lesbar") .. " | Zuordnung: " .. (spec or "nicht eindeutig"))
+        GC:Print("Die Raiderliste beginnt bei Stufe " .. GC.Client.maxLevel .. "; Beta-Levelgrenzen können darunter liegen.")
         if not GC.Client.combatAnalysis then GC:Print(GC.Client.combatAnalysisReason) end
         return
     end

@@ -218,6 +218,7 @@ end
 -- "Thrall" und "Thrall-Frostwolf" nicht. Vorher wurden beide Faelle gleich
 -- behandelt und ein fremder Spieler mit dem eigenen zusammengelegt.
 local function CanonicalLeadName(name)
+    if GC.Client.isForever then return GC.Util.PlayerKey(name) end
     local trimmed = GC.Util.Trim(tostring(name or ""))
     if trimmed == "" then
         return ""
