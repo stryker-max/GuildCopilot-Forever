@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.1.0-beta.7 – 21.09.2026
+
+- Gildenprofil optional: Hauptschalter und einzelne Schalter für Kurzbeschreibung, Raidzeiten, Progress, Lootsystem, Discord und Kontaktperson. Änderungen werden mit „Speichern & weiter“ übernommen; deaktivierte Werte bleiben gespeichert und lassen sich wieder einschalten.
+- Werbung, Standardantworten, neue Loot-Vorbelegungen und Hinweise auf fehlende Profilangaben berücksichtigen die Schalter. Eigene Antwortvorlagen lassen Sätze mit deaktivierten Platzhaltern aus. Bereits manuell geschriebene Texte und bestehende Raidpläne bleiben eigene Entwürfe.
+- Profiländerungen verwerfen eine alte Werbebestätigung. Schalter werden gildenweit synchronisiert; für die Anwendung auf allen Clients ist beta.7 erforderlich. Bearbeitungsrechte bleiben bestehen.
+- Prüfungen für gespeicherte Werte, Hauptschalter, einzelne Felder, Antwortvorlagen, Berechtigungen, erneute Aktivierung und fragmentierten Profil-Sync.
+
 ## 0.1.0-beta.6 – 21.09.2026
 
 - Levelbegrenzung und Levelangabe aus der Gildenübersicht entfernt. Mitglieder aller Stufen erscheinen gemäß der bestehenden Rangauswahl und Sortierung nach letzter Aktivität. Hilfetexte, Diagnose und Übersetzungen angepasst. Die separate Rekrutierungsabdeckung behält ihre bisherigen Regeln.

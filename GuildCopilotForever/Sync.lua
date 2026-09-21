@@ -1565,6 +1565,10 @@ function GC.Sync:BuildGuildProfilePayload()
     local memberCare = guildData.memberCare
     local roster = guildData.roster
     local inboxSound = guildData.inboxSound
+    local disabled = {}
+    for _, key in ipairs(GC.DB.GuildProfileFields) do
+        if profile.disabledFields and profile.disabledFields[key] then disabled[#disabled + 1] = key end
+    end
     local fields = {
         "GP",
         tostring(profile.updatedAt or 0),
@@ -1598,6 +1602,8 @@ function GC.Sync:BuildGuildProfilePayload()
         -- bisher nach ihrer eigenen Vorgabe.
         BoolField(inboxSound.ranksConfigured),
         table.concat(SortedEnabledRanks(inboxSound.ranks), ","),
+        BoolField(profile.enabled ~= false),
+        table.concat(disabled, ","),
     }
     for index, value in ipairs(fields) do
         fields[index] = GC.Util.EscapeField(value)
@@ -1911,6 +1917,8 @@ function GC.Sync:ReceiveGuildProfileChunk(message, sender, distribution)
     if fields[1] ~= "GP" then
         return
     end
+    if fields[28] ~= nil and (fields[28] ~= "0" and fields[28] ~= "1"
+        or #(fields[29] or "") > 100) then return end
     local updatedAt = tonumber(fields[2]) or 0
     local guildData = GC.DB:GetGuild()
     local now = GC.Util.Now()
@@ -1945,6 +1953,14 @@ function GC.Sync:ReceiveGuildProfileChunk(message, sender, distribution)
     guildData.profile.discord = fields[7] or ""
     guildData.profile.contact = fields[8] or ""
     guildData.profile.updatedAt = updatedAt
+    if fields[28] ~= nil then
+        guildData.profile.enabled = fields[28] == "1"
+        guildData.profile.disabledFields = {}
+        local disabled = "," .. (fields[29] or "") .. ","
+        for _, key in ipairs(GC.DB.GuildProfileFields) do
+            if disabled:find("," .. key .. ",", 1, true) then guildData.profile.disabledFields[key] = true end
+        end
+    end
     guildData.profilePermissions.configured = fields[9] == "1"
     guildData.profilePermissions.editorRanks = DecodeEnabledRanks(fields[10])
     guildData.replyTemplates.THANKS = fields[11] or ""

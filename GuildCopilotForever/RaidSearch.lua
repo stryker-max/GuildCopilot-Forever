@@ -122,7 +122,7 @@ function GC.RaidSearch:NewPlan()
     }
     -- Die gildenweite Lootregel aus dem Gildenprofil ist die beste Vorbelegung;
     -- das Feld bleibt Freitext und darf je Abend abweichen.
-    local lootSystem = GC.Util.Trim(GC.DB:GetGuild().profile.lootSystem)
+    local lootSystem = GC.Util.Trim(GC.DB:GetActiveGuildProfile().lootSystem)
     if lootSystem ~= "" then
         plan.loot.rule = lootSystem
     end

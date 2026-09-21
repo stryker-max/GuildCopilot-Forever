@@ -1,10 +1,10 @@
-# Guild Copilot 0.1.0-beta.6
+# Guild Copilot 0.1.0-beta.7
 
 Eigenständige Portierung von [Guild Copilot für TBC Anniversary](https://github.com/stryker-max/GuildCopilot) für **World of Warcraft: Forever Beta 1.60.1.69913**, Interface **16001**.
 
 ## Installation
 
-1. Das Paket `GuildCopilotForever-0.1.0-beta.6.zip` entpacken.
+1. Das Paket `GuildCopilotForever-0.1.0-beta.7.zip` entpacken.
 2. Den darin enthaltenen Ordner `GuildCopilotForever` nach `World of Warcraft/_classic_beta_/Interface/AddOns/` kopieren.
 3. Den WoW-Client vollständig neu starten, wenn das Addon neu hinzugefügt wurde. In der Addon-Liste **Guild Copilot** aktivieren.
 4. Im Spiel mit **`/gcp`** öffnen. **`/gcp client`** zeigt Client, Addon-Version, Datenbank und Sync-Kanal; **`/gcp ver`** zeigt die Versionen in der Gilde/Gruppe.
@@ -48,6 +48,8 @@ Forever verwendet regionale Charakternamen und Regelsets statt der bisherigen Re
 
 ## Validierung
 
+Das **Gildenprofil ist optional**: „Gildenprofil verwenden“ schaltet es insgesamt ein/aus; die Kästchen an den Feldern steuern einzelne Angaben. Mit „Speichern & weiter“ übernehmen. Deaktivierte Werte bleiben gespeichert. Neue Werbung und Antworten verwenden nur aktive Angaben; in eigenen Antwortvorlagen entfallen ganze Sätze mit deaktivierten Platzhaltern. Bereits manuell verfasste Texte und bestehende Raidpläne werden nicht nachträglich umgeschrieben. Nach Profiländerungen den Werbetext erneut bestätigen. Für gildenweit einheitliche Schalter benötigen alle beteiligten Clients **beta.7 oder neuer**.
+
 Im Bewerberpostfach zeigt die Kopfzeile, ob Erkennungswörter eingerichtet sind. Neue Interessenten werden gemäß diesen Einstellungen aufgenommen; bekannte Unterhaltungen bleiben auch nach Ende der Suche aktiv. Private Folgetexte bleiben lokal. Antworten über 255 Bytes oder vom Client abgewiesene Aufrufe behalten den Entwurf; „an den Client übergeben“ bestätigt keine Serverzustellung.
 
 Für vollständige Rezeptabgleiche müssen Sender und Empfänger **beta.2 oder neuer** verwenden. Große Rezepte werden vollständig über mehrere Nachrichten übertragen; beta.1 versteht dieses neue Format noch nicht.
@@ -70,4 +72,4 @@ Optional dieselben Lua-Tests unter echtem Lua 5.1:
 GCP_LUA51=lua5.1 npm run test:lua
 ```
 
-Ausgabe: `build/GuildCopilotForever-0.1.0-beta.6.zip` und `build/SHA256.json`. Lizenz: MIT, ursprüngliche Urheberschaft des Guild Copilot Teams bleibt erhalten.
+Ausgabe: `build/GuildCopilotForever-0.1.0-beta.7.zip` und `build/SHA256.json`. Lizenz: MIT, ursprüngliche Urheberschaft des Guild Copilot Teams bleibt erhalten.

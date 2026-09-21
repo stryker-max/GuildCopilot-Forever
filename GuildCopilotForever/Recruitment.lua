@@ -325,7 +325,7 @@ end
 
 function GC.Recruitment:GenerateAdvertisement()
     local guildData = GC.DB:GetGuild()
-    local info = guildData.profile
+    local info = GC.DB:GetActiveGuildProfile()
     local raidMarker = math.floor(tonumber(guildData.recruitment.raidMarker) or 8)
     raidMarker = math.max(1, math.min(8, raidMarker))
     local markerText = "{rt" .. raidMarker .. "}"
@@ -396,12 +396,31 @@ end
 
 function GC.Recruitment:GenerateReply(kind, playerName)
     local guildData = GC.DB:GetGuild()
-    local info = guildData.profile
+    local info = GC.DB:GetActiveGuildProfile()
     local replyMarker = guildData.recruitment.replyMarker
     local shortName = GC.Util.PlayerIdentityName(playerName or "")
     local reply = ""
     local customTemplate = guildData.replyTemplates and guildData.replyTemplates[kind] or ""
+    if kind == "INFO" and guildData.profile.enabled == false then return "" end
+    if kind == "DISCORD" and not GC.DB:IsGuildProfileFieldEnabled("discord") then return "" end
+    -- Die ausgelieferte INFO-Vorlage wird aus aktiven Feldern zusammengesetzt,
+    -- damit keine leeren Beschriftungen oder abhaengige Satzreste entstehen.
+    if kind == "INFO" and customTemplate == "{beschreibung} Raidzeiten: {raidzeiten}. Lootsystem: {loot}. Progress: {progress}." then
+        customTemplate = ""
+    end
     if GC.Util.Trim(customTemplate) ~= "" then
+        local tokens = { beschreibung = "description", raidzeiten = "raidTimes", progress = "progress",
+            loot = "lootSystem", discord = "discord", kontakt = "contact" }
+        -- Eigene Vorlagen behalten ihren Wortlaut. Saetze mit ausgeschalteten
+        -- Platzhaltern entfallen komplett, statt z.B. "Raidzeiten: ." zu senden.
+        customTemplate = customTemplate:gsub("[^.!?\n]+[.!?]*\n?", function(sentence)
+            for token, key in pairs(tokens) do
+                if not GC.DB:IsGuildProfileFieldEnabled(key) and sentence:find("{" .. token .. "}", 1, true) then
+                    return ""
+                end
+            end
+            return sentence
+        end)
         local replacements = {
             ["{name}"] = shortName,
             ["{gilde}"] = GC:GetGuildName(),
@@ -433,7 +452,7 @@ function GC.Recruitment:GenerateReply(kind, playerName)
             AddPart(pieces, "Progress: " .. info.progress .. ".")
         end
         if #pieces == 0 then
-            reply = "Unsere Gildeninfos sind noch nicht hinterlegt. Ich beantworte dir gern alle Fragen."
+            reply = ""
         else
             reply = table.concat(pieces, " ")
         end
@@ -446,3 +465,7 @@ function GC.Recruitment:GenerateReply(kind, playerName)
     end
     return self:DecorateReply(reply, replyMarker)
 end
+
+GC:RegisterCallback("GUILD_PROFILE_UPDATED", GC.Recruitment, function()
+    InvalidateAdvertisement()
+end)

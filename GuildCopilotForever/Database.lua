@@ -167,6 +167,8 @@ local DEFAULTS = {
 local GUILD_DEFAULTS = {
     editorRecoveryAvailable = true,
     profile = {
+        enabled = true,
+        disabledFields = {},
         description = "",
         raidTimes = "",
         progress = "",
@@ -272,6 +274,21 @@ local GUILD_DEFAULTS = {
 }
 
 GC.DB = {}
+GC.DB.GuildProfileFields = { "description", "raidTimes", "progress", "lootSystem", "discord", "contact" }
+
+function GC.DB:IsGuildProfileFieldEnabled(key)
+    local profile = self:GetGuild().profile
+    return profile.enabled ~= false and not (profile.disabledFields and profile.disabledFields[key])
+end
+
+function GC.DB:GetActiveGuildProfile()
+    local profile = self:GetGuild().profile
+    local active = {}
+    for _, key in ipairs(self.GuildProfileFields) do
+        active[key] = profile.enabled ~= false and not profile.disabledFields[key] and (profile[key] or "") or ""
+    end
+    return active
+end
 
 function GC.DB:Initialize()
     local GuildCopilotForeverDB = _G[GC.Client.savedVariable]

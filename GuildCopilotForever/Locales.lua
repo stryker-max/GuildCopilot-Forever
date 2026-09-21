@@ -30,6 +30,10 @@ local _, GC = ...
 -- nicht Uebersetztes faellt sichtbar und harmlos auf Deutsch zurueck.
 
 local english = {
+    ["Gildenprofil verwenden"] = "Use guild profile",
+    ["DEAKTIVIERT"] = "DISABLED",
+    ["Nur aktivierte Angaben fließen in neue Texte ein. Ausgeschaltete Werte bleiben gespeichert. Änderungen mit Speichern übernehmen."]
+        = "Only enabled fields are used in new texts. Disabled values stay saved. Save to apply changes.",
     -- === Teilschritt 1: Navigation =========================================
     -- Abschnitte der Seitenleiste. COPILOT, RAID und SYSTEM sind in beiden
     -- Sprachen dieselben Woerter und brauchen keinen Eintrag.

@@ -4686,7 +4686,7 @@ local function MissingGuildProfileFields()
         { key = "discord", label = "Discord" },
     }
     for _, field in ipairs(fields) do
-        if GC.Util.Trim(profile[field.key]) == "" then
+        if GC.DB:IsGuildProfileFieldEnabled(field.key) and GC.Util.Trim(profile[field.key]) == "" then
             missing[#missing + 1] = field.label
         end
     end
@@ -4782,7 +4782,8 @@ function GC.UI:RefreshSuggestions()
     else
         page.rosterRefreshStatus:SetText(GC.L("Noch nicht abgefragt"))
     end
-    page.metricCards.PROFILE.value:SetText(#missing == 0 and "BEREIT" or (#missing .. " OFFEN"))
+    page.metricCards.PROFILE.value:SetText(GC.DB:GetGuild().profile.enabled == false and GC.L("DEAKTIVIERT")
+        or (#missing == 0 and "BEREIT" or (#missing .. " OFFEN")))
     page.metricCards.COVERAGE.value:SetText(summary.knownProfiles .. "/" .. summary.total)
     page.metricCards.IMPORTS.value:SetText(summary.importedProfiles)
 
@@ -8675,6 +8676,7 @@ function GC.UI:BuildInboxPage()
         end
     end)
     info:SetPoint("LEFT", thanks, "RIGHT", 8, 0)
+    page.infoReplyButton = info
     local discord = CreateButton(detailCard, "Discord", 105, 30, function()
         local lead = SelectedLeadForAction()
         if lead then
@@ -8682,6 +8684,7 @@ function GC.UI:BuildInboxPage()
         end
     end)
     discord:SetPoint("LEFT", info, "RIGHT", 8, 0)
+    page.discordReplyButton = discord
 
     page.replyButton = CreateButton(detailCard, "Antworten", 248, 38, function()
         local lead = SelectedLeadForAction()
@@ -9184,6 +9187,8 @@ function GC.UI:RefreshInbox()
         self:SetLeadProfileLinks(nil)
         page.replyButton:Disable()
         page.inviteButton:Disable()
+        SetButtonEnabled(page.infoReplyButton, false)
+        SetButtonEnabled(page.discordReplyButton, false)
         return
     end
 
@@ -9207,6 +9212,8 @@ function GC.UI:RefreshInbox()
     self:SetLeadProfileLinks(lead)
     page.replyButton:Enable()
     page.inviteButton:Enable()
+    SetButtonEnabled(page.infoReplyButton, GC.Recruitment:GenerateReply("INFO", lead.name) ~= "")
+    SetButtonEnabled(page.discordReplyButton, GC.Recruitment:GenerateReply("DISCORD", lead.name) ~= "")
 end
 
 -- Die Linkfelder sind bewusst nur zum Kopieren da: WoW-Addons koennen weder
@@ -9246,12 +9253,15 @@ end
 
 function GC.UI:BuildGuildPage()
     local page = self.pages.GUILD
-    CreatePageTitle(page, "Gildenprofil", "Diese Angaben werden gildenweit synchronisiert und fließen in Werbe- und Antworttexte ein.")
+    CreatePageTitle(page, "Gildenprofil", "Nur aktivierte Angaben fließen in neue Texte ein. Ausgeschaltete Werte bleiben gespeichert. Änderungen mit Speichern übernehmen.")
 
     local card = CreateCard(page, "Texte & Eckdaten")
     card:SetSize(776, 490)
     card:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -66)
     page.guildFields = {}
+    page.guildFieldToggles = {}
+    page.guildEnabled = CreateToggle(card, "Gildenprofil verwenden", function() GC.UI:RefreshGuildFieldAvailability() end)
+    page.guildEnabled:SetPoint("TOPLEFT", card, "TOPLEFT", 500, -12)
     local fields = {
         { key = "description", label = "Kurzbeschreibung", y = -52, multiline = true, height = 78 },
         { key = "raidTimes", label = "Raidzeiten", y = -150 },
@@ -9261,8 +9271,10 @@ function GC.UI:BuildGuildPage()
         { key = "contact", label = "Kontaktperson", y = -358 },
     }
     for _, definition in ipairs(fields) do
-        local label = CreateLabel(card, definition.label, { muted = true, width = 150 })
-        label:SetPoint("TOPLEFT", card, "TOPLEFT", 18, definition.y)
+        local toggle = CreateToggle(card, definition.label, function() GC.UI:RefreshGuildFieldAvailability() end)
+        toggle:SetPoint("TOPLEFT", card, "TOPLEFT", 18, definition.y)
+        toggle.text:SetWidth(140)
+        page.guildFieldToggles[definition.key] = toggle
         local edit
         if definition.multiline then
             edit = CreateTextArea(card, 558, definition.height, 800)
@@ -9280,8 +9292,11 @@ function GC.UI:BuildGuildPage()
             return
         end
         local profile = GC.DB:GetGuild().profile
+        profile.enabled = page.guildEnabled:GetChecked() == true
+        profile.disabledFields = {}
         for key, edit in pairs(page.guildFields) do
             profile[key] = GC.Util.Trim(edit:GetText())
+            if not page.guildFieldToggles[key]:GetChecked() then profile.disabledFields[key] = true end
         end
         profile.updatedAt = GC.Util.Now()
         GC.DB:GetGuild().recruitment.adText = GC.Recruitment:GenerateAdvertisement()
@@ -9310,6 +9325,22 @@ function GC.UI:BuildGuildPage()
     page.saveResult:SetPoint("LEFT", page.guildSaveButton, "RIGHT", 14, 0)
 end
 
+function GC.UI:RefreshGuildFieldAvailability()
+    local page = self.pages.GUILD
+    local canEdit = GC.Roster:CanEditGuildProfile()
+    if canEdit then page.guildEnabled:Enable() else page.guildEnabled:Disable() end
+    page.guildEnabled:SetAlpha(canEdit and 1 or 0.45)
+    for key, edit in pairs(page.guildFields) do
+        local toggle = page.guildFieldToggles[key]
+        local canToggle = canEdit and page.guildEnabled:GetChecked()
+        if canToggle then toggle:Enable() else toggle:Disable() end
+        toggle:SetAlpha(canToggle and 1 or 0.45)
+        local active = page.guildEnabled:GetChecked() and toggle:GetChecked()
+        if canEdit and active then edit:Enable() else edit:ClearFocus(); edit:Disable() end
+        edit.container:SetAlpha(active and 1 or 0.45)
+    end
+end
+
 function GC.UI:RefreshGuild()
     local page = self.pages.GUILD
     if not page then
@@ -9317,7 +9348,9 @@ function GC.UI:RefreshGuild()
     end
     local info = GC.DB:GetGuild().profile
     local canEdit = GC.Roster:CanEditGuildProfile()
+    SetToggle(page.guildEnabled, info.enabled ~= false)
     for key, edit in pairs(page.guildFields) do
+        SetToggle(page.guildFieldToggles[key], not info.disabledFields[key])
         if not edit:HasFocus() then
             edit:SetText(info[key] or "")
         end
@@ -9327,6 +9360,7 @@ function GC.UI:RefreshGuild()
             edit:Disable()
         end
     end
+    self:RefreshGuildFieldAvailability()
     if canEdit then
         page.guildSaveButton:Enable()
         if page.saveResult:GetText() == "" then
